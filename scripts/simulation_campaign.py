@@ -27,32 +27,32 @@ log_message("Setting up..\n")
 cases_folder = os.path.join('..','cases')
 subfolders = [f.path for f in os.scandir(cases_folder) if f.is_dir()]
 
-log_message("Beginning simulation cases...")
+log_message("Beginning simulation cases...\n")
 
 for k, folder in enumerate(subfolders):
     case = os.path.basename(os.path.normpath(folder))
-    log_message("\n\nCURRENT CASE: " + case)
+    log_message("\nCURRENT CASE: " + case + '\n')
     # Get ini file
     files = glob.glob(os.path.join(folder,'*.ini'))
     if len(files) == 0:
-        log_message('\nWarning: no configuration file in case ' + case + 
-                   '. Going to next folder')
+        log_message('Warning: no configuration file in case ' + case + 
+                   '. Going to next folder\n')
         continue
     elif len(files) > 1: 
-        log_message('\nWarning: more than one configuration file in case ' + case + 
-                       '. Using file: ' + os.path.basename(os.path.normpath(files[0])))
+        log_message('Warning: more than one configuration file in case ' + case + 
+                       '. Using file: ' + os.path.basename(os.path.normpath(files[0])) + '\n')
     
     # Run simulation
     file = files[0]
     try:
         main(['-p',file,'-o',folder])
     except Exception as e:
-        log_message('\nEXCEPTION:')
-        log_message('\n' + str(e) + "\nTraceback: ")
+        log_message('EXCEPTION:\n')
+        log_message('\n' + str(e) + "Traceback: ")
         print_tb(e.__traceback__)
-        log_message("\n Moving on...")
+        log_message("\n Moving on... \n")
             
     log_message("\n" + case + " case finished.\n" + str(len(subfolders) - k - 1)\
-               + " cases to go...")
+               + " cases to go...\n")
     
-log_message('\n\nDONE SIMULATING\n\n')
+log_message('\nDONE SIMULATING\n\n')
