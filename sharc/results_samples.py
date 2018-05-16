@@ -24,7 +24,7 @@ class ResultsSamples(Results):
 
         for item in out_dir_files:
             if item.endswith(".txt"):
-                open(join(out_dir, item),'r+').truncate()
+                remove(join(out_dir, item))
         
     def generate_plot_list(self, *args):
         self.plot_list = list()
@@ -376,13 +376,14 @@ class ResultsSamples(Results):
             
     def write_files(self, snapshot_number: int):
         file_extension = ".txt"
-        header_text = "Results collected after " + str(snapshot_number) + " snapshots.\n"
         self.generate_plot_list()
+        
+#        header_text = "Results collected after " + str(snapshot_number) + " snapshots.\n"
             
         for plot in self.plot_list:
             
             file_name = join(self.output_directory, plot.file_name + file_extension)
-            self.write_head(file_name,header_text)
+#            self.write_head(file_name,header_text)
             
             with open(file_name,'a') as f:
                 for x, y in zip(plot.x, plot.y):
