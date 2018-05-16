@@ -60,13 +60,20 @@ def send_mail(send_from, send_to, subject, message, files=[],
     smtp.quit()
     
 if __name__ == '__main__':
+    
+    attach = False
+    
     file = open('bot_email')
     sender = file.readline()
     pwrd = file.readline()
     receiver = file.readline()
     subject = "Your simulation is done :D"
-    msg = "The simulation results are attached to this email \o/"
-    fls = ["simulation_results.tar"]
+    if attach:
+        msg = "The simulation results are attached to this email \o/"
+        fls = ["simulation_results.tar"]
+    else:
+        msg = "The simulation results are available in the file simulation_results.tar \o/"
+        fls = []
     svr = 'smtp.gmail.com'
     user = sender
     file.close()
