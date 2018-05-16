@@ -10,6 +10,7 @@ import glob
 from traceback import print_tb
 from sharc.main_cli import main
 from sys import stdout
+from datetime import datetime
 
 def log_message(message: str):
     print(message)
@@ -18,7 +19,8 @@ def log_message(message: str):
         clog.write(message)
         clog.flush()
 
-log_message("_____SIMULATION SCRIPT_____\n")
+log_message(str(datetime.now()))
+log_message("\n\n_____SIMULATION SCRIPT_____\n")
 log_message("Setting up..\n")
 
 # Setup paths
@@ -45,11 +47,12 @@ for k, folder in enumerate(subfolders):
     try:
         main(['-p',file,'-o',folder])
     except Exception as e:
-        log_message(str(e) + "\nTraceback: ")
+        log_message('\nEXCEPTION:')
+        log_message('\n' + str(e) + "\nTraceback: ")
         print_tb(e.__traceback__)
         log_message("\n Moving on...")
             
-    log_message("\n" + case + " case finished." + str(len(subfolders) - k - 1)\
-               + " cases to go.\n")
+    log_message("\n" + case + " case finished.\n" + str(len(subfolders) - k - 1)\
+               + " cases to go...")
     
-log_message('DONE SIMULATING')
+log_message('\n\nDONE SIMULATING\n\n')
