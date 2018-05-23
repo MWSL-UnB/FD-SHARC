@@ -156,6 +156,7 @@ class Simulation(ABC, Observable):
 
         if station_a.station_type is StationType.FSS_SS or station_a.station_type is StationType.FSS_ES:
 
+            # System <-> IMT antenna gains
             if station_b.station_type is StationType.IMT_UE:
                 # define antenna gains
                 gain_a = self.calculate_gains(station_a, station_b)
@@ -168,6 +169,7 @@ class Simulation(ABC, Observable):
                 gain_b = np.transpose(self.calculate_gains(station_b, station_a))
                 sectors_in_node = self.parameters.imt.ue_k
 
+            # System <-> IMT path loss
             if self.parameters.imt.interfered_with:
                 earth_to_space = False
                 single_entry = True
@@ -183,6 +185,8 @@ class Simulation(ABC, Observable):
                                              earth_to_space = earth_to_space,
                                              earth_station_antenna_gain=gain_b,
                                              single_entry=single_entry,
+                                             es_params=self.param_system,
+                                             tx_gain = gain_a, rx_gain = gain_b,
                                              number_of_sectors=sectors_in_node)
 
         else: # IMT <-> IMT

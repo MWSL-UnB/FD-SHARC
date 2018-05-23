@@ -160,7 +160,7 @@ class Parameters(object):
         #######################################################################
         self.fss_ss.frequency               = config.getfloat("FSS_SS", "frequency")
         self.fss_ss.bandwidth               = config.getfloat("FSS_SS", "bandwidth")
-        self.fss_ss.tx_power_density        = config.getfloat("FSS_ES", "tx_power_density")
+        self.fss_ss.tx_power_density        = config.getfloat("FSS_SS", "tx_power_density")
         self.fss_ss.altitude                = config.getfloat("FSS_SS", "altitude")
         self.fss_ss.lat_deg                 = config.getfloat("FSS_SS", "lat_deg")
         self.fss_ss.elevation               = config.getfloat("FSS_SS", "elevation")
@@ -199,3 +199,19 @@ class Parameters(object):
         self.fss_es.line_of_sight_prob = config.getfloat("FSS_ES", "line_of_sight_prob")
         self.fss_es.BOLTZMANN_CONSTANT = config.getfloat("FSS_ES", "BOLTZMANN_CONSTANT")
         self.fss_es.EARTH_RADIUS = config.getfloat("FSS_ES", "EARTH_RADIUS")
+
+        # P452 parameters
+        self.fss_es.atmospheric_pressure = config.getfloat("FSS_ES", "atmospheric_pressure")
+        self.fss_es.air_temperature = config.getfloat("FSS_ES", "air_temperature")
+        self.fss_es.N0 = config.getfloat("FSS_ES", "N0")
+        self.fss_es.delta_N = config.getfloat("FSS_ES", "delta_N")
+        self.fss_es.percentage_p = config.getfloat("FSS_ES", "percentage_p")
+        self.fss_es.Dct = config.getfloat("FSS_ES", "Dct")
+        self.fss_es.Dcr = config.getfloat("FSS_ES", "Dcr")
+        self.fss_es.Hte = config.getfloat("FSS_ES", "Hte")
+        self.fss_es.Hre = config.getfloat("FSS_ES", "Hre")
+        self.fss_es.tx_lat = config.getfloat("FSS_ES", "tx_lat")
+        self.fss_es.rx_lat = config.getfloat("FSS_ES", "rx_lat")
+        self.fss_es.polarization = config.get("FSS_ES", "polarization")
+        self.fss_es.clutter_loss = config.getboolean("FSS_ES", "clutter_loss")
+
