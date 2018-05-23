@@ -38,6 +38,9 @@ class PropagationClutterLoss(Propagation):
             array with clutter loss values with dimensions of distance
 
         """
+        super().__init__()
+        self.random_number_gen = np.random.RandomState()
+        
         f = kwargs["frequency"]
         loc_per = kwargs.pop("loc_percentage","RANDOM")
         type = kwargs["station_type"]
