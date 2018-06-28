@@ -43,26 +43,28 @@ class SimulationFullDuplex(Simulation):
         # In case of hotspots, base stations coordinates have to be calculated
         # on every snapshot. Anyway, let topology decide whether to calculate
         # or not
-        self.topology.calculate_coordinates()
+        self.topology.calculate_coordinates(random_number_gen)
         
         # Create the base stations (remember that it takes into account the
         # network load factor)
         self.bs = StationFactory.generate_imt_base_stations(self.parameters.imt,
                                                             self.parameters.antenna_imt,
-                                                            self.topology)
+                                                            self.topology,
+                                                            random_number_gen)
 
         # Create IMT user equipments
         self.ue = StationFactory.generate_imt_ue(self.parameters.imt,
                                                  self.parameters.antenna_imt,
-                                                 self.topology)
+                                                 self.topology,
+                                                 random_number_gen)
         
         # Create the other system (FSS, HAPS, etc...)
-        self.system = StationFactory.generate_system(self.parameters)
+        self.system = StationFactory.generate_system(self.parameters, self.topology, random_number_gen)
         
         #self.plot_scenario()
         
         self.connect_ue_to_bs()
-        self.select_ue()
+        self.select_ue(random_number_gen)
         
         # Calculate coupling loss after beams are created
         self.coupling_loss_imt = self.calculate_coupling_loss(self.bs, 
@@ -132,7 +134,7 @@ class SimulationFullDuplex(Simulation):
                 p_cmax = self.parameters.imt.ue_p_cmax
                 m_pusch = self.num_rb_per_ue
                 p_o_pusch = self.parameters.imt.ue_p_o_pusch
-                alpha = self.parameters.imt.ue_alfa
+                alpha = self.parameters.imt.ue_alpha
                 cl = self.coupling_loss_imt[bs,ue] + self.parameters.imt.bs_ohmic_loss \
                             + self.parameters.imt.ue_ohmic_loss + self.parameters.imt.ue_body_loss
                 self.ue.tx_power[ue] = np.minimum(p_cmax, 10*np.log10(m_pusch) + p_o_pusch + alpha*cl)

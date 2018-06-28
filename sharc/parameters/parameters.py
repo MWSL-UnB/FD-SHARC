@@ -118,6 +118,7 @@ class Parameters(object):
         self.antenna_imt.normalization              = config.getboolean("IMT_ANTENNA", "beamforming_normalization")
         self.antenna_imt.bs_normalization_file          = config.get("IMT_ANTENNA", "bs_normalization_file")
         self.antenna_imt.ue_normalization_file          = config.get("IMT_ANTENNA", "ue_normalization_file")
+        self.antenna_imt.bs_element_pattern          = config.get("IMT_ANTENNA", "bs_element_pattern")
         self.antenna_imt.bs_tx_element_max_g    = config.getfloat("IMT_ANTENNA", "bs_tx_element_max_g")
         self.antenna_imt.bs_tx_element_phi_deg_3db   = config.getfloat("IMT_ANTENNA", "bs_tx_element_phi_deg_3db")
         self.antenna_imt.bs_tx_element_theta_deg_3db = config.getfloat("IMT_ANTENNA", "bs_tx_element_theta_deg_3db")
@@ -139,6 +140,7 @@ class Parameters(object):
         self.antenna_imt.bs_rx_element_vert_spacing = config.getfloat("IMT_ANTENNA", "bs_rx_element_vert_spacing")
 
         self.antenna_imt.ue_antenna_type        = config.get("IMT_ANTENNA", "ue_antenna_type")
+        self.antenna_imt.ue_element_pattern          = config.get("IMT_ANTENNA", "ue_element_pattern")
 
         self.antenna_imt.ue_tx_element_max_g    = config.getfloat("IMT_ANTENNA", "ue_tx_element_max_g")
         self.antenna_imt.ue_tx_element_phi_deg_3db  = config.getfloat("IMT_ANTENNA", "ue_tx_element_phi_deg_3db")
