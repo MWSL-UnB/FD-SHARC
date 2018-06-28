@@ -11,6 +11,8 @@ import math
 from sharc.support.enumerations import StationType
 from sharc.station import Station
 from sharc.antenna.antenna import Antenna
+from sharc.spectral_mask_imt import SpectralMaskImt
+from sharc.spectral_mask_3gpp import SpectralMask3Gpp
 
 class StationManager(object):
     """
@@ -44,6 +46,10 @@ class StationManager(object):
         self.sinr_ext = np.empty(n)
         self.inr = np.empty(n)
         self.sic = np.empty(n)
+        self.pfd = np.empty(n)
+        self.spectral_mask = np.empty(n, dtype=SpectralMask3Gpp)
+        self.center_freq = np.empty(n)
+        self.spectral_mask = None
         self.station_type = StationType.NONE
 
     def get_station_list(self, id=None) -> list:
@@ -102,6 +108,28 @@ class StationManager(object):
         distance[idx0] = np.nan
         return distance
 
+    def get_elevation(self, station) -> np.array:
+        """
+        Calculates the elevation angle between stations. Can be used for
+        IMT stations.
+        
+        TODO: this implementation is essentialy the same as the one from 
+              get_elevation_angle (free-space elevation angle), despite the
+              different matrix dimentions. So, the methods should be merged 
+              in order to reuse the source code
+        """
+
+        elevation = np.empty([self.num_stations, station.num_stations])
+
+        for i in range(self.num_stations):
+            distance = np.sqrt(np.power(self.x[i] - station.x, 2) +
+                           np.power(self.y[i] - station.y, 2))
+            rel_z = station.height - self.height[i]
+            elevation[i] = np.degrees(np.arctan2(rel_z, distance))
+            
+        return elevation
+        
+        
     def get_elevation_angle(self, station, sat_params) -> dict:
         free_space_angle = np.empty(self.num_stations)
         angle = np.empty(self.num_stations)
@@ -159,4 +187,3 @@ class StationManager(object):
         phi_deg = np.degrees(phi)
 
         return phi_deg
-        

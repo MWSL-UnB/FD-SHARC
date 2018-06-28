@@ -18,3 +18,4 @@ sudo python3 -m pip install matplotlib
 echo "CLONING REPOSITORY"
 git clone https://github.com/MWSL-UnB/FD-SHARC.git
 git pull origin dev_simulation_scripts
+export PYTHONPATH=$PYTHONPATH:/home/ubuntu/FD-SHARC

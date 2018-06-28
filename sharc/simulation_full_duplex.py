@@ -11,14 +11,15 @@ import math
 from sharc.simulation import Simulation
 from sharc.parameters.parameters import Parameters
 from sharc.station_factory import StationFactory
+from sharc.propagation.propagation_factory import PropagationFactory
 
 class SimulationFullDuplex(Simulation):
     """
     Implements the full duplex simulation
     """
 
-    def __init__(self, parameters: Parameters):
-        super().__init__(parameters)
+    def __init__(self, parameters: Parameters, parameter_file: str):
+        super().__init__(parameters,parameter_file)
         self.coupling_loss_imt_bs_bs = np.empty(0)
         self.coupling_loss_imt_ue_ue = np.empty(0)
         self.coupling_loss_imt_bs_system = np.empty(0)
@@ -30,6 +31,14 @@ class SimulationFullDuplex(Simulation):
     def snapshot(self, *args, **kwargs):
         write_to_file = kwargs["write_to_file"]
         snapshot_number = kwargs["snapshot_number"]
+        seed = kwargs["seed"]
+        
+        random_number_gen = np.random.RandomState(seed)
+
+        self.propagation_imt = PropagationFactory.create_propagation(self.parameters.imt.channel_model, self.parameters,
+                                                                    random_number_gen)
+        self.propagation_system = PropagationFactory.create_propagation(self.param_system.channel_model, self.parameters,
+                                                                       random_number_gen)
         
         # In case of hotspots, base stations coordinates have to be calculated
         # on every snapshot. Anyway, let topology decide whether to calculate

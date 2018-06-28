@@ -13,9 +13,9 @@ from sharc.propagation.propagation_free_space import PropagationFreeSpace
 from sharc.propagation.propagation_clutter_loss import PropagationClutterLoss
 from sharc.propagation.propagation_building_entry_loss import PropagationBuildingEntryLoss
 from sharc.propagation.atmosphere import ReferenceAtmosphere
-from sharc.parameters.parameters_fss_ss import ParametersFssSs
 from sharc.support.enumerations import StationType
 from sharc.propagation.scintillation import Scintillation
+
 
 class PropagationP619(Propagation):
     """
@@ -25,12 +25,13 @@ class PropagationP619(Propagation):
         get_loss: Calculates path loss for earth-space link
     """
 
-    def __init__(self):
-        super().__init__()
-        self.clutter = PropagationClutterLoss()
-        self.free_space = PropagationFreeSpace()
-        self.building_entry = PropagationBuildingEntryLoss()
-        self.scintillation = Scintillation()
+    def __init__(self, random_number_gen: np.random.RandomState):
+        super().__init__(random_number_gen)
+
+        self.clutter = PropagationClutterLoss(self.random_number_gen)
+        self.free_space = PropagationFreeSpace(self.random_number_gen)
+        self.building_entry = PropagationBuildingEntryLoss(self.random_number_gen)
+        self.scintillation = Scintillation(self.random_number_gen)
         self.atmosphere = ReferenceAtmosphere()
 
         self.depolarization_loss = 1.5
@@ -40,6 +41,7 @@ class PropagationP619(Propagation):
         self.surf_water_dens_has_atmospheric_loss = []
         self.atmospheric_loss = []
         self.elevation_delta = .01
+
 
     def _get_atmospheric_gasses_loss(self, *args, **kwargs) -> float:
         """
@@ -220,7 +222,7 @@ class PropagationP619(Propagation):
                     atmospheric_gasses_loss + beam_spreading_attenuation + diffraction_loss)
             loss = np.repeat(loss, number_of_sectors, 1) + tropo_scintillation_loss
         else:
-            clutter_loss = self.clutter.get_loss(frequency=f,
+            clutter_loss = self.clutter.get_loss(frequency=f, distance=d,
                                                  elevation=elevation["free_space"],
                                                  station_type=StationType.FSS_SS)
             building_loss = self.building_entry.get_loss(f, elevation["apparent"]) * indoor_stations

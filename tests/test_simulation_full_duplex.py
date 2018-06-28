@@ -15,6 +15,7 @@ from sharc.simulation_full_duplex import SimulationFullDuplex
 from sharc.parameters.parameters import Parameters
 from sharc.antenna.antenna_omni import AntennaOmni
 from sharc.station_factory import StationFactory
+from sharc.propagation.propagation_factory import PropagationFactory
 
 class SimulationFullDuplexTest(unittest.TestCase):
 
@@ -22,7 +23,13 @@ class SimulationFullDuplexTest(unittest.TestCase):
         self.param = Parameters()
         
         self.param.general.imt_link = "FULLDUPLEX"
+        self.param.general.enable_cochannel = True
+        self.param.general.enable_adjacent_channel = False
+        self.param.general.overwrite_output = True
+        self.param.general.seed = "101"
         self.param.general.results_format = "CDF"
+        self.param.general.save_snapshot = 10
+        self.param.general.suppress_large_results = False
         
         self.param.imt.topology = "SINGLE_BS"
         self.param.imt.num_macrocell_sites = 19
@@ -33,6 +40,7 @@ class SimulationFullDuplexTest(unittest.TestCase):
         self.param.imt.frequency = 10000
         self.param.imt.bandwidth = 100
         self.param.imt.rb_bandwidth = 0.180
+        self.param.imt.spectral_mask = "ITU 265-E"
         self.param.imt.guard_band_ratio = 0.1
         self.param.imt.ho_margin = 3
         self.param.imt.bs_load_probability = 1
@@ -53,6 +61,7 @@ class SimulationFullDuplexTest(unittest.TestCase):
         self.param.imt.ue_indoor_percent = 0
         self.param.imt.ue_distribution_distance = "RAYLEIGH"
         self.param.imt.ue_distribution_azimuth = "UNIFORM"
+        self.param.imt.ue_distribution_type = "ANGLE_AND_DISTANCE"
         self.param.imt.ue_tx_power_control = "OFF"
         self.param.imt.ue_p_o_pusch = -95
         self.param.imt.ue_alfa = 0.8
@@ -75,9 +84,12 @@ class SimulationFullDuplexTest(unittest.TestCase):
         self.param.imt.BOLTZMANN_CONSTANT = 1.38064852e-23
         
         self.param.antenna_imt.bs_antenna_type = "BEAMFORMING"
+        self.param.antenna_imt.normalization = False
+        self.param.antenna_imt.bs_element_pattern = "M2101"
+        self.param.antenna_imt.bs_normalization_file = None
         self.param.antenna_imt.bs_tx_element_max_g = 10
-        self.param.antenna_imt.bs_tx_element_phi_3db = 80
-        self.param.antenna_imt.bs_tx_element_theta_3db = 80
+        self.param.antenna_imt.bs_tx_element_phi_deg_3db = 80
+        self.param.antenna_imt.bs_tx_element_theta_deg_3db = 80
         self.param.antenna_imt.bs_tx_element_am = 25
         self.param.antenna_imt.bs_tx_element_sla_v = 25
         self.param.antenna_imt.bs_tx_n_rows = 16
@@ -85,18 +97,20 @@ class SimulationFullDuplexTest(unittest.TestCase):
         self.param.antenna_imt.bs_tx_element_horiz_spacing = 1
         self.param.antenna_imt.bs_tx_element_vert_spacing = 1
         self.param.antenna_imt.bs_rx_element_max_g = 5
-        self.param.antenna_imt.bs_rx_element_phi_3db = 65
-        self.param.antenna_imt.bs_rx_element_theta_3db = 65
+        self.param.antenna_imt.bs_rx_element_phi_deg_3db = 65
+        self.param.antenna_imt.bs_rx_element_theta_deg_3db = 65
         self.param.antenna_imt.bs_rx_element_am = 30
         self.param.antenna_imt.bs_rx_element_sla_v = 30
         self.param.antenna_imt.bs_rx_n_rows = 2
         self.param.antenna_imt.bs_rx_n_columns = 2
+        self.param.antenna_imt.bs_downtilt_deg = 10
         self.param.antenna_imt.bs_rx_element_horiz_spacing = 0.5
         self.param.antenna_imt.bs_rx_element_vert_spacing = 0.5
+        self.param.antenna_imt.bs_element_pattern = "M2101"
         self.param.antenna_imt.ue_antenna_type = "BEAMFORMING"
         self.param.antenna_imt.ue_tx_element_max_g = 5
-        self.param.antenna_imt.ue_tx_element_phi_3db = 65
-        self.param.antenna_imt.ue_tx_element_theta_3db = 65
+        self.param.antenna_imt.ue_tx_element_phi_deg_3db = 65
+        self.param.antenna_imt.ue_tx_element_theta_deg_3db = 65
         self.param.antenna_imt.ue_tx_element_am = 30
         self.param.antenna_imt.ue_tx_element_sla_v = 30
         self.param.antenna_imt.ue_tx_n_rows = 2
@@ -104,14 +118,15 @@ class SimulationFullDuplexTest(unittest.TestCase):
         self.param.antenna_imt.ue_tx_element_horiz_spacing = 0.5
         self.param.antenna_imt.ue_tx_element_vert_spacing = 0.5
         self.param.antenna_imt.ue_rx_element_max_g = 10
-        self.param.antenna_imt.ue_rx_element_phi_3db = 90
-        self.param.antenna_imt.ue_rx_element_theta_3db = 90
+        self.param.antenna_imt.ue_rx_element_phi_deg_3db = 90
+        self.param.antenna_imt.ue_rx_element_theta_deg_3db = 90
         self.param.antenna_imt.ue_rx_element_am = 25
         self.param.antenna_imt.ue_rx_element_sla_v = 25
         self.param.antenna_imt.ue_rx_n_rows = 16
         self.param.antenna_imt.ue_rx_n_columns = 16
         self.param.antenna_imt.ue_rx_element_horiz_spacing = 1
         self.param.antenna_imt.ue_rx_element_vert_spacing = 1
+        self.param.antenna_imt.ue_element_pattern = "M2101"
         
         self.param.fss_ss.frequency = 10000
         self.param.fss_ss.bandwidth = 100
@@ -155,21 +170,25 @@ class SimulationFullDuplexTest(unittest.TestCase):
     def test_simulation_2bs_4ue_fss_ss(self):
         self.param.general.system = "FSS_SS"
 
-        self.simulation = SimulationFullDuplex(self.param)
+        self.simulation = SimulationFullDuplex(self.param, "")
         self.simulation.initialize()
 
         self.simulation.bs_power_gain = 0
         self.simulation.ue_power_gain = 0
         
+        random_number_gen = np.random.RandomState()
+        
         self.simulation.bs = StationFactory.generate_imt_base_stations(self.param.imt,
                                                                        self.param.antenna_imt,
-                                                                       self.simulation.topology)
+                                                                       self.simulation.topology,
+                                                                       random_number_gen)
         self.simulation.bs.antenna = np.array([AntennaOmni(1), AntennaOmni(2)])
         self.simulation.bs.active = np.ones(2, dtype=bool)
         
         self.simulation.ue = StationFactory.generate_imt_ue(self.param.imt,
                                                             self.param.antenna_imt,
-                                                            self.simulation.topology)
+                                                            self.simulation.topology,
+                                                            random_number_gen)
         self.simulation.ue.x = np.array([20, 70, 110, 170])
         self.simulation.ue.y = np.array([ 0,  0,   0,   0])
         self.simulation.ue.antenna = np.array([AntennaOmni(10), AntennaOmni(11), AntennaOmni(22), AntennaOmni(23)])
@@ -182,6 +201,11 @@ class SimulationFullDuplexTest(unittest.TestCase):
         # We do not test the selection method here because in this specific 
         # scenario we do not want to change the order of the UE's 
         #self.simulation.select_ue()
+        
+        self.simulation.propagation_imt = PropagationFactory.create_propagation(self.param.imt.channel_model,
+                                                                                self.param, random_number_gen)
+        self.simulation.propagation_system = PropagationFactory.create_propagation(self.param.fss_ss.channel_model,
+                                                                                   self.param, random_number_gen)
         
         # test coupling loss method
         self.simulation.coupling_loss_imt = self.simulation.calculate_coupling_loss(self.simulation.bs, 
@@ -245,14 +269,19 @@ class SimulationFullDuplexTest(unittest.TestCase):
                             np.array([-88.44, -88.44, -88.44, -88.44]),
                             atol=1e-2)
         
-        # check UE thermal noise + interference
-        npt.assert_allclose(self.simulation.ue.total_interference, 
-                            np.array([-50.53, -49.45, -50.51, -49.44]),
+        # check tx power
+        npt.assert_allclose(self.simulation.ue.tx_power, 
+                            np.array([ 20.0,  20.0,  20.0,  20.0]),
                             atol=1e-2)
         
         # check self-interference
         npt.assert_allclose(self.simulation.ue.self_interference, 
                             np.array([-80, -80, -80, -80]),
+                            atol=1e-2)
+        
+        # check UE thermal noise + interference + self interference
+        npt.assert_allclose(self.simulation.ue.total_interference, 
+                            np.array([-50.53, -49.45, -50.51, -49.44]),
                             atol=1e-2)
         
         # check SNR 
@@ -359,28 +388,37 @@ class SimulationFullDuplexTest(unittest.TestCase):
     def test_simulation_2bs_4ue_fss_es(self):
         self.param.general.system = "FSS_ES"
         
-        self.simulation = SimulationFullDuplex(self.param)
+        self.simulation = SimulationFullDuplex(self.param,"")
         self.simulation.initialize()
         
         
         self.simulation.bs_power_gain = 0
         self.simulation.ue_power_gain = 0
         
+        random_number_gen = np.random.RandomState()
+        
         self.simulation.bs = StationFactory.generate_imt_base_stations(self.param.imt,
                                                                        self.param.antenna_imt,
-                                                                       self.simulation.topology)
+                                                                       self.simulation.topology,
+                                                                       random_number_gen)
         self.simulation.bs.antenna = np.array([AntennaOmni(1), AntennaOmni(2)])
         self.simulation.bs.active = np.ones(2, dtype=bool)
         
         self.simulation.ue = StationFactory.generate_imt_ue(self.param.imt,
                                                             self.param.antenna_imt,
-                                                            self.simulation.topology)
+                                                            self.simulation.topology,
+                                                            random_number_gen)
+        
         self.simulation.ue.x = np.array([20, 70, 110, 170])
         self.simulation.ue.y = np.array([ 0,  0,   0,   0])
         self.simulation.ue.antenna = np.array([AntennaOmni(10), AntennaOmni(11), AntennaOmni(22), AntennaOmni(23)])
         self.simulation.ue.active = np.ones(4, dtype=bool)
         
         self.simulation.connect_ue_to_bs()
+        self.simulation.propagation_imt = PropagationFactory.create_propagation(self.param.imt.channel_model,
+                                                                                self.param, random_number_gen)
+        self.simulation.propagation_system = PropagationFactory.create_propagation(self.param.fss_ss.channel_model,
+                                                                                   self.param, random_number_gen)
         self.simulation.coupling_loss_imt = self.simulation.calculate_coupling_loss(self.simulation.bs, 
                                                                                     self.simulation.ue,
                                                                                     self.simulation.propagation_imt)

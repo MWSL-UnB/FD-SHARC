@@ -11,42 +11,52 @@ import math
 from sharc.simulation import Simulation
 from sharc.parameters.parameters import Parameters
 from sharc.station_factory import StationFactory
+from sharc.support.enumerations import StationType
+
+from sharc.propagation.propagation_factory import PropagationFactory
 
 class SimulationUplink(Simulation):
     """
     Implements the flowchart of simulation downlink method
     """
 
-    def __init__(self, parameters: Parameters):
-        super().__init__(parameters)
+    def __init__(self, parameters: Parameters, parameter_file: str):
+        super().__init__(parameters, parameter_file)
 
-        
     def snapshot(self, *args, **kwargs):
         write_to_file = kwargs["write_to_file"]
         snapshot_number = kwargs["snapshot_number"]
+        seed = kwargs["seed"]
         
+        random_number_gen = np.random.RandomState(seed)
+
+        self.propagation_imt = PropagationFactory.create_propagation(self.parameters.imt.channel_model, self.parameters,
+                                                                     random_number_gen)
+        self.propagation_system = PropagationFactory.create_propagation(self.param_system.channel_model, self.parameters,
+                                                                        random_number_gen)
+
         # In case of hotspots, base stations coordinates have to be calculated
         # on every snapshot. Anyway, let topology decide whether to calculate
         # or not
-        self.topology.calculate_coordinates()
+        self.topology.calculate_coordinates(random_number_gen)
         
         # Create the base stations (remember that it takes into account the
         # network load factor)
         self.bs = StationFactory.generate_imt_base_stations(self.parameters.imt,
                                                             self.parameters.antenna_imt,
-                                                            self.topology)      
+                                                            self.topology, random_number_gen)
         
         # Create the other system (FSS, HAPS, etc...)
-        self.system = StationFactory.generate_system(self.parameters)
+        self.system = StationFactory.generate_system(self.parameters, self.topology, random_number_gen)
 
         # Create IMT user equipments
         self.ue = StationFactory.generate_imt_ue(self.parameters.imt,
                                                  self.parameters.antenna_imt,
-                                                 self.topology)
+                                                 self.topology, random_number_gen)
         #self.plot_scenario()
         
         self.connect_ue_to_bs()
-        self.select_ue()
+        self.select_ue(random_number_gen)
         
         # Calculate coupling loss after beams are created
         self.coupling_loss_imt = self.calculate_coupling_loss(self.bs, 
@@ -89,22 +99,26 @@ class SimulationUplink(Simulation):
                 p_cmax = self.parameters.imt.ue_p_cmax
                 m_pusch = self.num_rb_per_ue
                 p_o_pusch = self.parameters.imt.ue_p_o_pusch
-                alpha = self.parameters.imt.ue_alfa
+                alpha = self.parameters.imt.ue_alpha
                 cl = self.coupling_loss_imt[bs,ue] + self.parameters.imt.bs_ohmic_loss \
                             + self.parameters.imt.ue_ohmic_loss + self.parameters.imt.ue_body_loss
                 self.ue.tx_power[ue] = np.minimum(p_cmax, 10*np.log10(m_pusch) + p_o_pusch + alpha*cl)
+        if self.adjacent_channel: 
+            self.ue_power_diff = self.parameters.imt.ue_p_cmax - self.ue.tx_power
 
 
     def calculate_sinr(self):
         """
-        Calculates the uplink SINR for each UE. 
+        Calculates the uplink SINR for each BS.
         """
         # calculate uplink received power for each active BS
         bs_active = np.where(self.bs.active)[0]
         for bs in bs_active:
             ue = self.link[bs]
+
             self.bs.rx_power[bs] = self.ue.tx_power[ue]  \
-                                        - self.parameters.imt.ue_ohmic_loss - self.parameters.imt.ue_body_loss \
+                                        - self.parameters.imt.ue_ohmic_loss \
+                                        - self.parameters.imt.ue_body_loss \
                                         - self.coupling_loss_imt[bs,ue] - self.parameters.imt.bs_ohmic_loss
             # create a list of BSs that serve the interfering UEs
             bs_interf = [b for b in bs_active if b not in [bs]]
@@ -112,8 +126,8 @@ class SimulationUplink(Simulation):
             # calculate intra system interference
             for bi in bs_interf:
                 ui = self.link[bi]
-                interference = self.ue.tx_power[ui] \
-                                - self.parameters.imt.ue_ohmic_loss - self.parameters.imt.ue_body_loss \
+                interference = self.ue.tx_power[ui] - self.parameters.imt.ue_ohmic_loss  \
+                                - self.parameters.imt.ue_body_loss \
                                 - self.coupling_loss_imt[bs,ui] - self.parameters.imt.bs_ohmic_loss
                 self.bs.rx_interference[bs] = 10*np.log10( \
                     np.power(10, 0.1*self.bs.rx_interference[bs])
@@ -144,9 +158,6 @@ class SimulationUplink(Simulation):
                                                                      self.bs,
                                                                      self.propagation_system)       
         
-        # applying a bandwidth scaling factor since UE transmits on a portion
-        # of the satellite's bandwidth
-        # calculate interference only to active UE's
         bs_active = np.where(self.bs.active)[0]
         tx_power = self.param_system.tx_power_density + 10*np.log10(self.bs.bandwidth*1e6) + 30
         for bs in bs_active:
@@ -163,37 +174,71 @@ class SimulationUplink(Simulation):
         """
         Calculates interference that IMT system generates on other system
         """
-
-        self.coupling_loss_imt_system = self.calculate_coupling_loss(self.system, 
+        if self.co_channel:
+            self.coupling_loss_imt_system = self.calculate_coupling_loss(self.system, 
                                                                      self.ue,
                                                                      self.propagation_system)
+
+        if self.adjacent_channel:
+              self.coupling_loss_imt_system_adjacent = self.calculate_coupling_loss(self.system,
+                                                                       self.ue,
+                                                                       self.propagation_system,
+                                                                       c_channel=False)
 
         # applying a bandwidth scaling factor since UE transmits on a portion
         # of the satellite's bandwidth
         # calculate interference only from active UE's
-        ue_active = np.where(self.ue.active)[0]
-        interference_ue = self.ue.tx_power[ue_active] \
-                            - self.parameters.imt.ue_ohmic_loss - self.parameters.imt.ue_body_loss \
-                            - self.coupling_loss_imt_system[ue_active] \
-                            + 10*np.log10(self.ue.bandwidth[ue_active]/self.param_system.bandwidth) \
+        rx_interference = 0
 
-        # calculate the aggregate interference on system
-        self.system.rx_interference = 10*np.log10(np.sum(np.power(10, 0.1*interference_ue)))
+        bs_active = np.where(self.bs.active)[0]
+        for bs in bs_active:
+            ue = self.link[bs]
 
+            if self.co_channel:
+                if self.overlapping_bandwidth:
+                    acs = 0
+                else:
+                    acs = self.param_system.adjacent_ch_selectivity
+
+                interference_ue = self.ue.tx_power[ue] - self.parameters.imt.ue_ohmic_loss \
+                                  - self.parameters.imt.ue_body_loss \
+                                  - self.coupling_loss_imt_system[ue]
+                weights = self.calculate_bw_weights(self.parameters.imt.bandwidth,
+                                                    self.param_system.bandwidth,
+                                                    self.parameters.imt.ue_k)
+                rx_interference += np.sum(weights*np.power(10, 0.1*interference_ue)) / 10**(acs/10.)
+
+            if self.adjacent_channel:
+                oob_power = self.ue.spectral_mask.power_calc(self.param_system.frequency,self.system.bandwidth)\
+                            - self.ue_power_diff[ue]
+                oob_interference_array = oob_power - self.coupling_loss_imt_system_adjacent[ue] \
+                                            + 10*np.log10((self.param_system.bandwidth - self.overlapping_bandwidth)/
+                                              self.param_system.bandwidth) \
+                                            - self.parameters.imt.ue_body_loss
+                rx_interference += np.sum(np.power(10,0.1*oob_interference_array))
+
+        self.system.rx_interference = 10*np.log10(rx_interference)
         # calculate N
         self.system.thermal_noise = \
             10*np.log10(self.param_system.BOLTZMANN_CONSTANT* \
-                          self.param_system.noise_temperature*1e3) + \
+                          self.system.noise_temperature*1e3) + \
                           10*math.log10(self.param_system.bandwidth * 1e6)
 
         # calculate INR at the system
         self.system.inr = np.array([self.system.rx_interference - self.system.thermal_noise])
+
+        # Calculate PFD at the system
+        if self.system.station_type is StationType.RAS:
+            self.system.pfd = 10*np.log10(10**(self.system.rx_interference/10)/self.system.antenna[0].effective_area)
 
 
     def collect_results(self, write_to_file: bool, snapshot_number: int):
         if not self.parameters.imt.interfered_with:
             self.results.system_inr.extend(self.system.inr.tolist())
             self.results.system_inr_scaled.extend([self.system.inr + 10*math.log10(self.param_system.inr_scaling)])
+            if self.system.station_type is StationType.RAS:
+                self.results.system_pfd.extend([self.system.pfd])
+                self.results.system_ul_interf_power.extend([self.system.rx_interference])
         
         bs_active = np.where(self.bs.active)[0]
         for bs in bs_active:
@@ -241,4 +286,3 @@ class SimulationUplink(Simulation):
 
         
 
-        
