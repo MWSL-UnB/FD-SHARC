@@ -291,7 +291,11 @@ class SimulationFullDuplex(Simulation):
             10*math.log10(self.param_system.BOLTZMANN_CONSTANT* \
                           self.param_system.noise_temperature*1e3) + \
                           10*math.log10(self.param_system.bandwidth * 1e6)
-
+                          
+        # Overlapping bandwidth weights
+        weights = self.calculate_bw_weights(self.parameters.imt.bandwidth,
+                                            self.param_system.bandwidth,
+                                            self.parameters.imt.ue_k)
 
         # applying a bandwidth scaling factor since UE transmits on a portion
         # of the satellite's bandwidth
@@ -299,25 +303,32 @@ class SimulationFullDuplex(Simulation):
         bs_active = np.where(self.bs.active)[0]
         for bs in bs_active:
             active_beams = [i for i in range(bs*self.parameters.imt.ue_k, (bs+1)*self.parameters.imt.ue_k)]
-            interference_bs = self.bs.tx_power[bs] - self.coupling_loss_imt_bs_system[active_beams] \
-                                + 10*np.log10(self.bs.bandwidth[bs]/self.param_system.bandwidth)
+            
+            interference_bs = self.bs.tx_power[bs] - self.coupling_loss_imt_bs_system[active_beams] - \
+                              self.parameters.imt.bs_ohmic_loss
+                              
+            total_interference_bs = np.sum(weights*np.power(10, 0.1*interference_bs))
+            
                                 
             self.system.rx_interference = 10*math.log10( \
                     math.pow(10, 0.1*self.system.rx_interference) + \
-                    np.sum(np.power(10, 0.1*interference_bs)))
+                    total_interference_bs)
         
         if not self.parameters.imt.interfered_with:
             self.system_dl_inr = np.array([self.system.rx_interference - self.system.thermal_noise])
         
         # UE interference
-        ue_active = np.where(self.ue.active)[0]
-        interference_ue = self.ue.tx_power[ue_active] \
-                            - self.parameters.imt.ue_ohmic_loss - self.parameters.imt.ue_body_loss \
-                            - self.coupling_loss_imt_ue_system[ue_active] \
-                            + 10*np.log10(self.ue.bandwidth[ue_active]/self.param_system.bandwidth)
+        for bs in bs_active:
+            ue = self.link[bs]
+
+            interference_ue = self.ue.tx_power[ue] - self.parameters.imt.ue_ohmic_loss \
+                              - self.parameters.imt.ue_body_loss \
+                              - self.coupling_loss_imt_ue_system[ue]
+                              
+            total_interference_ue = np.sum(weights*np.power(10, 0.1*interference_ue))
                             
-        self.system.rx_interference = 10*np.log10(np.power(10, 0.1*self.system.rx_interference) + \
-                                                  np.sum(np.power(10, 0.1*interference_ue)))
+            self.system.rx_interference = 10*np.log10(np.power(10, 0.1*self.system.rx_interference) + \
+                                          total_interference_ue)
         
         if not self.parameters.imt.interfered_with:
             self.system_ul_inr = np.array(interference_ue - self.system.thermal_noise)
