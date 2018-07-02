@@ -64,6 +64,7 @@ following keys:
         element correction factor
     parameters (AntennaPar): antenna parameters used in the normalization
 """
+from sys import stdout
 from sharc.support.named_tuples import AntennaPar
 from sharc.antenna.beamforming_normalization.beamforming_normalizer import BeamformingNormalizer
 
@@ -90,5 +91,5 @@ norm = BeamformingNormalizer(resolution,tolerance)
 for par, file in zip(param_list,file_names):
     s = 'Generating ' + file
     print(s)
-
+    stdout.flush()
     norm.generate_correction_matrix(par,file)
