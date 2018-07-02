@@ -69,10 +69,14 @@ from sharc.antenna.beamforming_normalization.beamforming_normalizer import Beamf
 
 ###############################################################################
 ## List of antenna parameters to which calculate the normalization factors.
-param_list = [AntennaPar(False,None,"M2101",5,65,65,30,30,8,16,0.5,0.5,0),
-              AntennaPar(False,None,"M2101",5,90,90,25,25,4,4,0.5,0.5,0)]
-file_names = ['bs_norm.npz',
-              'ue_norm.npz']
+param_list = [AntennaPar(False,None,"M2101",5,65,65,30,30,4,8,0.5,0.5,0),
+              AntennaPar(False,None,"M2101",5,65,65,30,30,8,8,0.5,0.5,0),
+              AntennaPar(False,None,"M2101",5,65,65,30,30,4,4,0.5,0.5,0),
+              AntennaPar(False,None,"M2101",5,90,90,25,25,2,2,0.5,0.5,0)]
+file_names = ['bs_norm_4x8.npz',
+              'bs_norm_8x8.npz',
+              'bs_norm_4x4.npz',
+              'ue_norm_2x2.npz']
 ###############################################################################
 ## Setup
 # General parameters
