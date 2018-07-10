@@ -237,6 +237,8 @@ if __name__ == '__main__':
     from sharc.parameters.parameters import Parameters
     import matplotlib.pyplot as plt
     import os
+    
+    rnd = np.random.RandomState()
 
     params = Parameters()
 
@@ -249,7 +251,7 @@ if __name__ == '__main__':
 
     sat_params = params.fss_ss
 
-    propagation = PropagationP619()
+    propagation = PropagationP619(rnd)
 
     ##########################
     # Plot atmospheric loss
@@ -284,9 +286,9 @@ if __name__ == '__main__':
     plt.grid(True)
 
 
-    plt.xlabel("apparent elevation (deg)")
-    plt.ylabel("Loss (dB)")
-    plt.title("Atmospheric Gasses Attenuation")
+    plt.xlabel("Elevação aparente [graus]")
+    plt.ylabel("Perda [dB]")
+#    plt.title("Atenuação por gases atmosféricos")
     plt.legend()
 
     altitude_vec = np.arange(0, 6.1, .5) * 1000
@@ -307,14 +309,14 @@ if __name__ == '__main__':
                                                                     earth_to_space)
 
     handles = plt.plot(altitude_vec / 1000, np.abs(attenuation))
-    plt.xlabel("altitude (km)")
-    plt.ylabel("Attenuation (dB)")
-    plt.title("Beam Spreading Attenuation")
+    plt.xlabel("Altitude [km]")
+    plt.ylabel("Atenuação [dB]")
+    plt.title("Atenuação por espalhamento de feixe")
 
     for line_handle, elevation in zip(handles, elevation_vec):
         line_handle.set_label("{}deg".format(elevation))
 
-    plt.legend(title="Elevation")
+    plt.legend(title="Elevação")
 
     plt.grid(True)
 

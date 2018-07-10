@@ -66,19 +66,19 @@ if __name__ == '__main__':
     param.antenna_gain = 50
     param.antenna_pattern = "ITU-R S.672-4"
     param.antenna_3_dB = 2
-    psi = np.linspace(1, 30, num = 1000)
+    psi = np.linspace(1, 180, num = 1000)
 
     param.antenna_l_s = -20
     antenna = AntennaS672(param)
-    gain20 = antenna.calculate_gain(phi_vec=psi)
+    gain20 = antenna.calculate_gain(off_axis_angle_vec=psi)
 
     param.antenna_l_s = -25
     antenna = AntennaS672(param)
-    gain25 = antenna.calculate_gain(phi_vec=psi)
+    gain25 = antenna.calculate_gain(off_axis_angle_vec=psi)
 
     param.antenna_l_s = -30
     antenna = AntennaS672(param)
-    gain30 = antenna.calculate_gain(phi_vec=psi)
+    gain30 = antenna.calculate_gain(off_axis_angle_vec=psi)
 
     fig = plt.figure(figsize=(12,7), facecolor='w', edgecolor='k')  # create a figure object
 
@@ -86,11 +86,11 @@ if __name__ == '__main__':
     plt.semilogx(psi, gain25 - param.antenna_gain, "-r", label="$L_S = -25$ dB")
     plt.semilogx(psi, gain30 - param.antenna_gain, "-g", label="$L_S = -30$ dB")
 
-    plt.ylim((-33.8, 0))
-    plt.xlim((1, 100))
-    plt.title("ITU-R S.672-4 antenna radiation pattern")
-    plt.xlabel("Relative off-axis angle, $\psi/\psi_0$")
-    plt.ylabel("Gain relative to $G_m$ [dB]")
+#    plt.ylim((-33.8, 0))
+    plt.xlim((1, 180))
+#    plt.title("ITU-R S.672-4 antenna radiation pattern")
+    plt.xlabel("Ângulo com relação ao eixo principal, $\psi/\psi_0$ [graus]")
+    plt.ylabel("Ganho relativo ao ganho maximo [dB]")
     plt.legend(loc="upper right")
 
     ax = plt.gca()
@@ -98,4 +98,5 @@ if __name__ == '__main__':
     ax.set_xticks(np.linspace(1, 9, 9).tolist() + np.linspace(10, 100, 10).tolist())
 
     plt.grid()
+    plt.savefig("s672_pattern.pdf", bbox_inches='tight')
     plt.show()

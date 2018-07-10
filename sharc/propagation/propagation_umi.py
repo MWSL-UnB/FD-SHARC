@@ -214,13 +214,15 @@ if __name__ == '__main__':
     import matplotlib.pyplot as plt
     from cycler import cycler
 
+    rnd = np.random.RandomState()
+
     ###########################################################################
     # Print LOS probability
     distance_2D = np.column_stack((np.linspace(1, 1000, num=1000)[:,np.newaxis],
                                    np.linspace(1, 1000, num=1000)[:,np.newaxis],
                                    np.linspace(1, 1000, num=1000)[:,np.newaxis]))
     #h_ue = np.array([1.5, 17, 23])
-    umi = PropagationUMi()
+    umi = PropagationUMi(rnd)
 
     los_probability = np.empty(distance_2D.shape)
     name = list()
@@ -233,13 +235,14 @@ if __name__ == '__main__':
 
     ax.loglog(distance_2D, los_probability)
 
-    plt.title("UMi - LOS probability")
-    plt.xlabel("distance [m]")
-    plt.ylabel("probability")
+#    plt.title("UMi: probabilidade de linha de visada")
+    plt.xlabel("Distância [m]")
+    plt.ylabel("Probabilidade")
     plt.xlim((0, distance_2D[-1,0]))
     plt.ylim((0, 1.1))
     plt.tight_layout()
     plt.grid()
+    fig.savefig("umi_los_probability.pdf", bbox_inches='tight')
 
     ###########################################################################
     # Print path loss for UMi-LOS, UMi-NLOS and Free Space
@@ -254,7 +257,7 @@ if __name__ == '__main__':
 
     loss_los = umi.get_loss_los(distance_2D, distance_3D, freq, h_bs, h_ue, h_e, shadowing_std)
     loss_nlos = umi.get_loss_nlos(distance_2D, distance_3D, freq, h_bs, h_ue, h_e, shadowing_std)
-    loss_fs = PropagationFreeSpace().get_loss(distance_2D=distance_2D, frequency=freq)
+    loss_fs = PropagationFreeSpace(rnd).get_loss(distance_2D=distance_2D, frequency=freq)
 
     fig = plt.figure(figsize=(8,6), facecolor='w', edgecolor='k')
     ax = fig.gca()
@@ -262,15 +265,16 @@ if __name__ == '__main__':
 
     ax.semilogx(distance_2D, loss_los, label="UMi LOS")
     ax.semilogx(distance_2D, loss_nlos, label="UMi NLOS")
-    ax.semilogx(distance_2D, loss_fs, label="free space")
+    ax.semilogx(distance_2D, loss_fs, label="Espaço livre")
 
-    plt.title("UMi - path loss")
-    plt.xlabel("distance [m]")
-    plt.ylabel("path loss [dB]")
+#    plt.title("UMi - path loss")
+    plt.xlabel("Distância [m]")
+    plt.ylabel("Perda de propagação [dB]")
     plt.xlim((0, distance_2D[-1,0]))
     plt.ylim((60, 200))
     plt.legend(loc="upper left")
     plt.tight_layout()
     plt.grid()
+    fig.savefig("umi_path_loss.pdf", bbox_inches='tight')
 
     plt.show()

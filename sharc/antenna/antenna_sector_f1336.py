@@ -192,8 +192,8 @@ if __name__ == '__main__':
 
     antenna = AntennaSectorF1336(param,downtilt_deg,elevation,azimuth)
 
-    phi_v = np.arange(-180,180, step = 5)
-    theta_v = np.arange(0,180, step = 3)
+    phi_v = np.linspace(-180,180)
+    theta_v = np.linspace(0,180)
 
     pattern_hor_0deg = np.zeros(phi_v.shape)
     pattern_hor_10deg = np.zeros(phi_v.shape)
@@ -281,3 +281,37 @@ if __name__ == '__main__':
 
     plt.legend()
     plt.show()
+    
+    # x degrees tilt 2
+    plt.close('all')
+    downtilt_deg = -10
+    antenna = AntennaSectorF1336(param,downtilt_deg,elevation,azimuth)
+
+    pattern_hor = antenna.calculate_gain(phi_vec=phi_v,theta_vec=100)
+
+    fig = plt.figure(1)
+    ax = fig.add_subplot(1,1,1)
+    ax.plot(phi_v, pattern_hor)
+    
+    ax.set_xlabel (r"$\varphi$ [graus]")
+    ax.set_ylabel (r"Ganho [dBi]")
+    ax.set_xlim(-180,180)
+    ax.grid(True)
+    fig.savefig("f1336_horizontal.pdf", bbox_inches='tight')
+    plt.show(ax)
+
+    pattern_ver = antenna.calculate_gain(phi_vec=0,theta_vec=theta_v)
+
+    fig = plt.figure(2)
+    ax = fig.add_subplot(1,1,1)
+    ax.plot(theta_v, pattern_ver)
+
+    ax.set_xlabel (r"$\theta$ [graus]")
+    ax.set_ylabel (r"Ganho [dBi]")
+    ax.set_xlim(0,180)
+    ax.grid(True)
+    fig.savefig("f1336_vertical.pdf", bbox_inches='tight')
+    plt.show(ax)
+
+    
+    
