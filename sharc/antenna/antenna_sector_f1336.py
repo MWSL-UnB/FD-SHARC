@@ -41,9 +41,9 @@ class AntennaSectorF1336(Antenna):
 
         self.g_max = par.element_max_g
         self.downtilt_rad = downtilt_deg / 180 * np.pi
-        self.phi_deg_3db = par.element_phi_3db
-        if par.element_theta_3db > 0:
-            self.theta_deg_3db = par.element_theta_3db
+        self.phi_deg_3db = par.element_phi_deg_3db
+        if par.element_theta_deg_3db > 0:
+            self.theta_deg_3db = par.element_theta_deg_3db
         else:
             if self.phi_deg_3db > 120.:
                 sys.stderr.write("ERROR\nvertical beamwidth must be givem if horizontal beamwidth > 120 degrees")
