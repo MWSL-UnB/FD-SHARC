@@ -2,7 +2,7 @@
 
 echo "INSTALLING PYTHON, PIP AND GIT"
 sudo apt-get update
-sudo apt-get install python3=3.5.3*
+sudo apt-get install python3=3.5.2*
 sudo apt-get install python3-pip
 sudo python3 -m pip install --upgrade pip
 sudo apt-get install python-support
@@ -18,4 +18,4 @@ sudo python3 -m pip install matplotlib
 echo "CLONING REPOSITORY"
 git clone https://github.com/MWSL-UnB/FD-SHARC.git
 git pull origin dev_simulation_scripts
-export PYTHONPATH=$PYTHONPATH:/home/ubuntu/FD-SHARC
+export PYTHONPATH=$PYTHONPATH:/home/calil/FD-SHARC
