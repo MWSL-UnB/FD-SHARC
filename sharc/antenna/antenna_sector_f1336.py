@@ -40,6 +40,7 @@ class AntennaSectorF1336(Antenna):
         self.azimuth = azimuth
 
         self.g_max = par.element_max_g
+        self.downtilt_deg = downtilt_deg
         self.downtilt_rad = downtilt_deg / 180 * np.pi
         self.phi_deg_3db = par.element_phi_deg_3db
         if par.element_theta_deg_3db > 0:
@@ -64,6 +65,14 @@ class AntennaSectorF1336(Antenna):
 
         self.g_hr_180 = -12. + 10 * np.log10(1 + 8 * self.k_a) - 15 * np.log10(180/self.theta_deg_3db)
         self.g_hr_0 = 0
+        
+        # antenna normalization
+        self.normalize = par.normalization
+        self.correction_factor = 0.0
+        if self.normalize:
+            # Load co-channel data
+            self.norm_data = par.normalization_data
+            self.correction_factor = self.norm_data["correction_factor"]
 
     def horizontal_pattern(self, phi: np.array) -> {np.array, float}:
         """
@@ -151,7 +160,7 @@ class AntennaSectorF1336(Antenna):
         compression_ratio = (gain_hor - self.g_hr_180)/(self.g_hr_0 - self.g_hr_180)
         gain = self.g_max + gain_hor + compression_ratio * self.vertical_pattern(theta)
 
-        return gain
+        return gain + self.correction_factor
     
     def to_local_coord(self,phi,theta):
         """
@@ -182,8 +191,8 @@ if __name__ == '__main__':
     param = ParametersAntennaImt()
 
     param.element_max_g = 15
-    param.element_phi_3db = 65
-    param.element_theta_3db = 0
+    param.element_phi_deg_3db = 65
+    param.element_theta_deg_3db = 0
 
     # 0 degrees tilt
     elevation = 0

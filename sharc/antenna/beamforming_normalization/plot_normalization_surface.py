@@ -10,7 +10,7 @@ import matplotlib.pyplot as pl
 from mpl_toolkits.mplot3d import Axes3D
 
 # Load file
-file_name = 'ue_norm_4x4.npz'
+file_name = 'bs_norm_8x8.npz'
 data = np.load(file_name)
 data_dict = {key:data[key] for key in data}
 data.close()
