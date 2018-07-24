@@ -345,6 +345,7 @@ class SimulationFullDuplex(Simulation):
             self.results.system_dl_inr_scaled.extend([self.system_dl_inr + 10*math.log10(self.param_system.inr_scaling)])
         
         bs_active = np.where(self.bs.active)[0]
+        total_tput = 0
         for bs in bs_active:
             ue = self.link[bs]
             self.results.imt_path_loss.extend(self.path_loss_imt[bs,ue])
@@ -385,7 +386,7 @@ class SimulationFullDuplex(Simulation):
             tput = tput*self.ue.bandwidth[ue]
             self.results.imt_dl_tput.extend(tput.tolist())
             
-            total_tput = np.sum(tput)
+            total_tput += np.sum(tput)
             
             tput = self.calculate_imt_tput(self.bs.sinr[bs],
                                            self.parameters.imt.ul_sinr_min,
@@ -394,8 +395,7 @@ class SimulationFullDuplex(Simulation):
             tput = tput*self.bs.bandwidth[bs]
             self.results.imt_ul_tput.extend(tput.tolist())
             
-            total_tput = np.sum(tput) + total_tput
-            self.results.imt_total_tput.extend([total_tput])
+            total_tput += np.sum(tput)
 
             if self.parameters.imt.interfered_with:
                 tput_ext = self.calculate_imt_tput(self.ue.sinr_ext[ue],
@@ -437,6 +437,8 @@ class SimulationFullDuplex(Simulation):
             self.results.imt_ul_sinr.extend(self.bs.sinr[bs].tolist())
             self.results.imt_ul_snr.extend(self.bs.snr[bs].tolist())
             self.results.imt_ul_bs_interf.extend(self.bs.total_interference[bs].tolist())
+            
+        self.results.imt_total_tput.extend([total_tput])
             
         if write_to_file:
             self.results.write_files(snapshot_number)

@@ -288,7 +288,7 @@ class PlotAntennaPattern(object):
 
     def plot_element_pattern(self,antenna: AntennaBeamformingImt, sta_type: str, antenna_type: str, plot_type: str):
 
-        phi_escan = 45
+        phi_escan = 0
         theta_tilt = 90
 
         # Plot horizontal pattern
@@ -378,7 +378,7 @@ if __name__ == '__main__':
     param.bs_tx_element_am       = 30
     param.bs_tx_element_sla_v    = 30
     param.bs_tx_n_rows           = 8
-    param.bs_tx_n_columns        = 8
+    param.bs_tx_n_columns        = 16
     param.bs_tx_element_horiz_spacing = 0.5
     param.bs_tx_element_vert_spacing = 0.5
     param.bs_downtilt_deg = 0

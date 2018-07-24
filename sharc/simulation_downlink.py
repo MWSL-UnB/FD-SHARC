@@ -236,6 +236,7 @@ class SimulationDownlink(Simulation):
                 self.results.system_dl_interf_power.extend([self.system.rx_interference])
         
         bs_active = np.where(self.bs.active)[0]
+        total_tput = 0
         for bs in bs_active:
             ue = self.link[bs]
             self.results.imt_path_loss.extend(self.path_loss_imt[bs,ue])
@@ -254,7 +255,7 @@ class SimulationDownlink(Simulation):
             tput = tput*self.ue.bandwidth[ue]
             self.results.imt_dl_tput.extend(tput.tolist())
             
-            self.results.imt_total_tput.extend([np.sum(tput)])
+            total_tput += np.sum(tput)
 
             if self.parameters.imt.interfered_with:
                 tput_ext = self.calculate_imt_tput(self.ue.sinr_ext[ue],
@@ -276,6 +277,8 @@ class SimulationDownlink(Simulation):
 
             self.results.imt_dl_sinr.extend(self.ue.sinr[ue].tolist())
             self.results.imt_dl_snr.extend(self.ue.snr[ue].tolist())
+            
+        self.results.imt_total_tput.extend([total_tput])
             
         if write_to_file:
             self.results.write_files(snapshot_number)
