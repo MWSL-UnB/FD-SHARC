@@ -193,6 +193,8 @@ class Simulation(ABC, Observable):
              station_b.station_type is StationType.IMT_UE and \
              self.parameters.imt.topology == "INDOOR":
             elevation_angles = np.transpose(station_b.get_elevation(station_a))
+        elif station_a.station_type is StationType.FSS_ES:
+            elevation_angles = station_b.get_elevation(station_a)
         else:
             elevation_angles = None
 
@@ -521,7 +523,24 @@ class Simulation(ABC, Observable):
         plt.tight_layout()
         plt.show()
 
-        sys.exit(0)
+        if self.parameters.imt.topology == "INDOOR":
+            fig = plt.figure(figsize=(8,8), facecolor='w', edgecolor='k')
+            ax = fig.gca()
+
+            # Plot network topology
+            self.topology.plot(ax,top_view=False)
+
+            # Plot user equipments
+            ax.scatter(self.ue.x, self.ue.height, color='r', edgecolor="w", linewidth=0.5, label="UE")
+
+            plt.title("Simulation scenario: side view")
+            plt.xlabel("x-coordinate [m]")
+            plt.ylabel("z-coordinate [m]")
+            plt.legend(loc="upper left", scatterpoints=1)
+            plt.tight_layout()
+            plt.show()
+        
+#        sys.exit(0)
 
     @abstractmethod
     def snapshot(self, *args, **kwargs):
