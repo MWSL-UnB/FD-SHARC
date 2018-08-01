@@ -278,7 +278,7 @@ class SimulationDownlink(Simulation):
             self.results.imt_dl_sinr.extend(self.ue.sinr[ue].tolist())
             self.results.imt_dl_snr.extend(self.ue.snr[ue].tolist())
             
-        self.results.imt_total_tput.extend([total_tput])
+        self.results.imt_dl_total_tput.extend([total_tput])
             
         if write_to_file:
             self.results.write_files(snapshot_number)

@@ -263,7 +263,29 @@ class ResultsCDF(Results):
             y = cumulative / cumulative[-1]
             title = "[IMT] CDF of IMT throughput"
             x_label = "Throughput [Mbits/s]"
-            y_label = "Probability of UL throughput < $X$"
+            y_label = "Probability of throughput < $X$"
+            file_name = title
+            y_limits = (0, 1)
+            self.plot_list.append(Plot(x, y, x_label, y_label, title, file_name, y_lim=y_limits))
+        if len(self.imt_dl_total_tput) > 0:
+            values, base = np.histogram(self.imt_dl_total_tput, bins=n_bins)
+            cumulative = np.cumsum(values)
+            x = base[:-1]
+            y = cumulative / cumulative[-1]
+            title = "[IMT] CDF of DL total throughput"
+            x_label = "Throughput [Mbits/s]"
+            y_label = "Probability of DL total throughput < $X$"
+            file_name = title
+            y_limits = (0, 1)
+            self.plot_list.append(Plot(x, y, x_label, y_label, title, file_name, y_lim=y_limits))
+        if len(self.imt_ul_total_tput) > 0:
+            values, base = np.histogram(self.imt_ul_total_tput, bins=n_bins)
+            cumulative = np.cumsum(values)
+            x = base[:-1]
+            y = cumulative / cumulative[-1]
+            title = "[IMT] CDF of UL total throughput"
+            x_label = "Throughput [Mbits/s]"
+            y_label = "Probability of UL total throughput < $X$"
             file_name = title
             y_limits = (0, 1)
             self.plot_list.append(Plot(x, y, x_label, y_label, title, file_name, y_lim=y_limits))

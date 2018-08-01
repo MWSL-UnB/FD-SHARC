@@ -284,7 +284,7 @@ class SimulationUplink(Simulation):
             self.results.imt_ul_sinr.extend(self.bs.sinr[bs].tolist())
             self.results.imt_ul_snr.extend(self.bs.snr[bs].tolist())
             
-        self.results.imt_total_tput.extend([total_tput])
+        self.results.imt_ul_total_tput.extend([total_tput])
             
         if write_to_file:
             self.results.write_files(snapshot_number)
