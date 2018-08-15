@@ -434,6 +434,7 @@ class ResultsSamples(Results):
         self.imt_ul_inr = list()
         self.imt_ul_tput_ext = list()
         self.imt_ul_tput = list()
+        self.imt_ul_total_tput = list()
         
         self.imt_total_tput = list()
 
@@ -462,6 +463,7 @@ class ResultsSamples(Results):
         self.imt_dl_inr = list()
         self.imt_dl_tput_ext = list()
         self.imt_dl_tput = list()
+        self.imt_dl_total_tput = list()
         
         self.imt_bs_bs_path_loss = list()
         self.imt_ue_ue_path_loss = list()
