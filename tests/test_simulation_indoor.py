@@ -26,6 +26,7 @@ class SimulationIndoorTest(unittest.TestCase):
         self.param.general.enable_cochannel = True
         self.param.general.enable_adjacent_channel = False
         self.param.general.overwrite_output = True
+        self.param.general.results_format = "SAMPLES"
 
         self.param.imt.topology = "INDOOR"
         self.param.imt.num_macrocell_sites = 19
@@ -69,8 +70,12 @@ class SimulationIndoorTest(unittest.TestCase):
         self.param.imt.shadowing = False
         self.param.imt.noise_temperature = 290
         self.param.imt.BOLTZMANN_CONSTANT = 1.38064852e-23
+        self.param.imt.bs_sic = 1000
+        self.param.imt.ue_sic = 1000
 
         self.param.antenna_imt.normalization = False
+        self.param.antenna_imt.bs_antenna_type = "BEAMFORMING"
+        self.param.antenna_imt.ue_antenna_type = "BEAMFORMING"
         self.param.antenna_imt.bs_normalization_file = path.join('..','sharc','antenna','beamforming_normalization','bs_indoor_norm.npz')
         self.param.antenna_imt.ue_normalization_file = path.join('..','sharc','antenna','beamforming_normalization','ue_norm.npz')
         self.param.antenna_imt.bs_element_pattern = "M2101"
@@ -149,7 +154,7 @@ class SimulationIndoorTest(unittest.TestCase):
         self.param.general.system = "FSS_ES"
 
         self.simulation = SimulationDownlink(self.param, "")
-        self.simulation.initialize()
+        self.simulation.initialize(out_dir='.')
 
         random_number_gen = np.random.RandomState(101)
 
