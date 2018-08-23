@@ -2,8 +2,6 @@
 
 echo "Begin siulations..."
 python3 simulation_campaign.py
-echo "Plot results..."
-python3 plot_all.py
 
 echo "Save tar..."
 cd ..
