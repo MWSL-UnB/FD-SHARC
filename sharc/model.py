@@ -6,11 +6,15 @@ Created on Mon Dec 26 17:03:51 2016
 """
 
 from sharc.support.observable import Observable
-from support.observer import Observer
+from sharc.support.observer import Observer
 from sharc.support.enumerations import State
 from sharc.simulation_downlink import SimulationDownlink
 from sharc.simulation_uplink import SimulationUplink
+from sharc.simulation_full_duplex import SimulationFullDuplex
 from sharc.parameters.parameters import Parameters
+
+import random
+import sys
 
 class Model(Observable):
     """
@@ -24,15 +28,18 @@ class Model(Observable):
         self.parameters = None
         self.param_file = None
         
-
     def add_observer(self, observer: Observer):
         Observable.add_observer(self, observer)
-        
         
     def set_param_file(self, param_file):
         self.param_file = param_file
         self.notify_observers(source = __name__,
                               message = "Loading file:\n" + self.param_file)
+        
+    def set_out_dir(self, out_dir):
+        self.out_dir = out_dir
+        self.notify_observers(source = __name__,
+                              message = "Output directory:\n" + self.out_dir)
         
         
     def initialize(self):
@@ -45,9 +52,11 @@ class Model(Observable):
         self.parameters.read_params()
         
         if self.parameters.general.imt_link == "DOWNLINK":
-            self.simulation = SimulationDownlink(self.parameters)
-        else:
-            self.simulation = SimulationUplink(self.parameters)
+            self.simulation = SimulationDownlink(self.parameters, self.param_file)
+        elif self.parameters.general.imt_link == "UPLINK":
+            self.simulation = SimulationUplink(self.parameters, self.param_file)
+        elif self.parameters.general.imt_link == "FULLDUPLEX":
+            self.simulation = SimulationFullDuplex(self.parameters, self.param_file)
         self.simulation.add_observer_list(self.observers)
 
         description = self.get_description()
@@ -56,14 +65,19 @@ class Model(Observable):
                               message=description + "\nSimulation is running...",
                               state=State.RUNNING )
         self.current_snapshot = 0
-        self.simulation.initialize()
+        self.simulation.initialize(out_dir = self.out_dir)
         
+        random.seed( self.parameters.general.seed )
         
+        self.secondary_seeds = [None] * self.parameters.general.num_snapshots
+
+        max_seed = 2**32 - 1
+
+        for index in range(self.parameters.general.num_snapshots):
+            self.secondary_seeds[index] = random.randint(1, max_seed)
+
     def get_description(self) -> str:
-        if self.parameters.general.system == "FSS_SS":
-            param_system = self.parameters.fss_ss
-        if self.parameters.general.system == "FSS_ES":
-            param_system = self.parameters.fss_es        
+        param_system = self.simulation.param_system
         
         description = "\nIMT:\n" \
                             + "\tinterfered with: {:s}\n".format(str(self.parameters.imt.interfered_with)) \
@@ -87,13 +101,14 @@ class Model(Observable):
         write_to_file = False
         self.current_snapshot += 1
 
-        if not self.current_snapshot % 10:
+        if not self.current_snapshot % self.parameters.general.save_snapshot:
             write_to_file = True
             self.notify_observers(source=__name__,
                                   message="Snapshot #" + str(self.current_snapshot))
 
         self.simulation.snapshot(write_to_file = write_to_file, 
-                                 snapshot_number = self.current_snapshot)
+                                 snapshot_number=self.current_snapshot,
+                                 seed = self.secondary_seeds[self.current_snapshot - 1])
             
     def is_finished(self) -> bool:
         """

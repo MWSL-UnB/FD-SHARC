@@ -11,6 +11,8 @@ import math
 from sharc.support.enumerations import StationType
 from sharc.station import Station
 from sharc.antenna.antenna import Antenna
+from sharc.spectral_mask_imt import SpectralMaskImt
+from sharc.spectral_mask_3gpp import SpectralMask3Gpp
 
 class StationManager(object):
     """
@@ -31,6 +33,7 @@ class StationManager(object):
         self.tx_power = np.empty(n)
         self.rx_power = np.empty(n)
         self.rx_interference = np.empty(n)
+        self.self_interference = np.empty(n)
         self.ext_interference = np.empty(n)
         self.antenna = np.empty(n, dtype=Antenna)
         self.bandwidth = np.empty(n)
@@ -42,6 +45,11 @@ class StationManager(object):
         self.sinr = np.empty(n)
         self.sinr_ext = np.empty(n)
         self.inr = np.empty(n)
+        self.sic = np.empty(n)
+        self.pfd = np.empty(n)
+        self.spectral_mask = np.empty(n, dtype=SpectralMask3Gpp)
+        self.center_freq = np.empty(n)
+        self.spectral_mask = None
         self.station_type = StationType.NONE
 
     def get_station_list(self, id=None) -> list:
@@ -69,6 +77,7 @@ class StationManager(object):
         station.antenna = self.antenna[id]
         station.bandwidth = self.bandwidth[id]
         station.noise_figure = self.noise_figure[id]
+        station.self_interference = self.self_interference[id]
         station.noise_temperature = self.noise_temperature[id]
         station.thermal_noise = self.thermal_noise[id]
         station.total_interference = self.total_interference[id]
@@ -76,6 +85,7 @@ class StationManager(object):
         station.sinr = self.sinr[id]
         station.sinr_ext = self.sinr_ext[id]
         station.inr = self.inr[id]
+        station.sic = self.sic[id]
         station.station_type = self.station_type
         return station
 
@@ -84,6 +94,8 @@ class StationManager(object):
         for i in range(self.num_stations):
             distance[i] = np.sqrt(np.power(self.x[i] - station.x, 2) +
                            np.power(self.y[i] - station.y, 2))
+        idx0 = np.where(distance == 0)
+        distance[idx0] = np.nan
         return distance
 
     def get_3d_distance_to(self, station) -> np.array:
@@ -92,8 +104,32 @@ class StationManager(object):
             distance[i] = np.sqrt(np.power(self.x[i] - station.x, 2) +
                            np.power(self.y[i] - station.y, 2) +
                             np.power(self.height[i] - station.height, 2))
+        idx0 = np.where(distance == 0)
+        distance[idx0] = np.nan
         return distance
 
+    def get_elevation(self, station) -> np.array:
+        """
+        Calculates the elevation angle between stations. Can be used for
+        IMT stations.
+        
+        TODO: this implementation is essentialy the same as the one from 
+              get_elevation_angle (free-space elevation angle), despite the
+              different matrix dimentions. So, the methods should be merged 
+              in order to reuse the source code
+        """
+
+        elevation = np.empty([self.num_stations, station.num_stations])
+
+        for i in range(self.num_stations):
+            distance = np.sqrt(np.power(self.x[i] - station.x, 2) +
+                           np.power(self.y[i] - station.y, 2))
+            rel_z = station.height - self.height[i]
+            elevation[i] = np.degrees(np.arctan2(rel_z, distance))
+            
+        return elevation
+        
+        
     def get_elevation_angle(self, station, sat_params) -> dict:
         free_space_angle = np.empty(self.num_stations)
         angle = np.empty(self.num_stations)
@@ -108,7 +144,7 @@ class StationManager(object):
             free_space_angle[i] = np.degrees(theta_0)
 
             ##
-            # calculate apparent elevation angle according to Attachment B
+            # calculate apparent elevation angle according to ITU-R P619, Attachment B
 
             tau_fs1 = 1.728 + 0.5411 * theta_0 + 0.03723 * theta_0**2
             tau_fs2 = 0.1815 + 0.06272 * theta_0 + 0.01380 * theta_0**2
@@ -122,18 +158,18 @@ class StationManager(object):
             angle[i] = np.degrees(theta_0 + tau_fs)
 
         return{'free_space': free_space_angle, 'apparent': angle}
-    
+
     def get_pointing_vector_to(self, station) -> tuple:
 
         point_vec_x = station.x- self.x[:,np.newaxis]
         point_vec_y = station.y - self.y[:,np.newaxis]
         point_vec_z = station.height - self.height[:,np.newaxis]
-            
+
         dist = self.get_3d_distance_to(station)
-        
+
         phi = np.array(np.rad2deg(np.arctan2(point_vec_y,point_vec_x)),ndmin=2)
         theta = np.rad2deg(np.arccos(point_vec_z/dist))
-        
+
         return phi, theta
 
     def get_off_axis_angle(self, station) -> np.array:
@@ -151,4 +187,3 @@ class StationManager(object):
         phi_deg = np.degrees(phi)
 
         return phi_deg
-        
