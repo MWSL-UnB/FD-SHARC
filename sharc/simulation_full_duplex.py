@@ -11,14 +11,15 @@ import math
 from sharc.simulation import Simulation
 from sharc.parameters.parameters import Parameters
 from sharc.station_factory import StationFactory
+from sharc.propagation.propagation_factory import PropagationFactory
 
 class SimulationFullDuplex(Simulation):
     """
     Implements the full duplex simulation
     """
 
-    def __init__(self, parameters: Parameters):
-        super().__init__(parameters)
+    def __init__(self, parameters: Parameters, parameter_file: str):
+        super().__init__(parameters,parameter_file)
         self.coupling_loss_imt_bs_bs = np.empty(0)
         self.coupling_loss_imt_ue_ue = np.empty(0)
         self.coupling_loss_imt_bs_system = np.empty(0)
@@ -30,30 +31,40 @@ class SimulationFullDuplex(Simulation):
     def snapshot(self, *args, **kwargs):
         write_to_file = kwargs["write_to_file"]
         snapshot_number = kwargs["snapshot_number"]
+        seed = kwargs["seed"]
+        
+        random_number_gen = np.random.RandomState(seed)
+
+        self.propagation_imt = PropagationFactory.create_propagation(self.parameters.imt.channel_model, self.parameters,
+                                                                    random_number_gen)
+        self.propagation_system = PropagationFactory.create_propagation(self.param_system.channel_model, self.parameters,
+                                                                       random_number_gen)
         
         # In case of hotspots, base stations coordinates have to be calculated
         # on every snapshot. Anyway, let topology decide whether to calculate
         # or not
-        self.topology.calculate_coordinates()
+        self.topology.calculate_coordinates(random_number_gen)
         
         # Create the base stations (remember that it takes into account the
         # network load factor)
         self.bs = StationFactory.generate_imt_base_stations(self.parameters.imt,
                                                             self.parameters.antenna_imt,
-                                                            self.topology)
+                                                            self.topology,
+                                                            random_number_gen)
 
         # Create IMT user equipments
         self.ue = StationFactory.generate_imt_ue(self.parameters.imt,
                                                  self.parameters.antenna_imt,
-                                                 self.topology)
+                                                 self.topology,
+                                                 random_number_gen)
         
         # Create the other system (FSS, HAPS, etc...)
-        self.system = StationFactory.generate_system(self.parameters)
+        self.system = StationFactory.generate_system(self.parameters, self.topology, random_number_gen)
         
         #self.plot_scenario()
         
         self.connect_ue_to_bs()
-        self.select_ue()
+        self.select_ue(random_number_gen)
         
         # Calculate coupling loss after beams are created
         self.coupling_loss_imt = self.calculate_coupling_loss(self.bs, 
@@ -123,7 +134,7 @@ class SimulationFullDuplex(Simulation):
                 p_cmax = self.parameters.imt.ue_p_cmax
                 m_pusch = self.num_rb_per_ue
                 p_o_pusch = self.parameters.imt.ue_p_o_pusch
-                alpha = self.parameters.imt.ue_alfa
+                alpha = self.parameters.imt.ue_alpha
                 cl = self.coupling_loss_imt[bs,ue] + self.parameters.imt.bs_ohmic_loss \
                             + self.parameters.imt.ue_ohmic_loss + self.parameters.imt.ue_body_loss
                 self.ue.tx_power[ue] = np.minimum(p_cmax, 10*np.log10(m_pusch) + p_o_pusch + alpha*cl)
@@ -280,7 +291,11 @@ class SimulationFullDuplex(Simulation):
             10*math.log10(self.param_system.BOLTZMANN_CONSTANT* \
                           self.param_system.noise_temperature*1e3) + \
                           10*math.log10(self.param_system.bandwidth * 1e6)
-
+                          
+        # Overlapping bandwidth weights
+        weights = self.calculate_bw_weights(self.parameters.imt.bandwidth,
+                                            self.param_system.bandwidth,
+                                            self.parameters.imt.ue_k)
 
         # applying a bandwidth scaling factor since UE transmits on a portion
         # of the satellite's bandwidth
@@ -288,28 +303,39 @@ class SimulationFullDuplex(Simulation):
         bs_active = np.where(self.bs.active)[0]
         for bs in bs_active:
             active_beams = [i for i in range(bs*self.parameters.imt.ue_k, (bs+1)*self.parameters.imt.ue_k)]
-            interference_bs = self.bs.tx_power[bs] - self.coupling_loss_imt_bs_system[active_beams] \
-                                + 10*np.log10(self.bs.bandwidth[bs]/self.param_system.bandwidth)
+            
+            interference_bs = self.bs.tx_power[bs] - self.coupling_loss_imt_bs_system[active_beams] - \
+                              self.parameters.imt.bs_ohmic_loss
+                              
+            total_interference_bs = np.sum(weights*np.power(10, 0.1*interference_bs))
+            
                                 
             self.system.rx_interference = 10*math.log10( \
                     math.pow(10, 0.1*self.system.rx_interference) + \
-                    np.sum(np.power(10, 0.1*interference_bs)))
+                    total_interference_bs)
         
         if not self.parameters.imt.interfered_with:
             self.system_dl_inr = np.array([self.system.rx_interference - self.system.thermal_noise])
         
         # UE interference
-        ue_active = np.where(self.ue.active)[0]
-        interference_ue = self.ue.tx_power[ue_active] \
-                            - self.parameters.imt.ue_ohmic_loss - self.parameters.imt.ue_body_loss \
-                            - self.coupling_loss_imt_ue_system[ue_active] \
-                            + 10*np.log10(self.ue.bandwidth[ue_active]/self.param_system.bandwidth)
-                            
-        self.system.rx_interference = 10*np.log10(np.power(10, 0.1*self.system.rx_interference) + \
-                                                  np.sum(np.power(10, 0.1*interference_ue)))
+        accumulated_interference_ue = -500
+        for bs in bs_active:
+            ue = self.link[bs]
+
+            interference_ue = self.ue.tx_power[ue] - self.parameters.imt.ue_ohmic_loss \
+                              - self.parameters.imt.ue_body_loss \
+                              - self.coupling_loss_imt_ue_system[ue]
+                              
+            total_interference_ue = np.sum(weights*np.power(10, 0.1*interference_ue))
+                     
+            accumulated_interference_ue = 10*np.log10(np.power(10, 0.1*accumulated_interference_ue) + \
+                                          total_interference_ue)
+            
+            self.system.rx_interference = 10*np.log10(np.power(10, 0.1*self.system.rx_interference) + \
+                                          total_interference_ue)
         
         if not self.parameters.imt.interfered_with:
-            self.system_ul_inr = np.array(interference_ue - self.system.thermal_noise)
+            self.system_ul_inr = np.array([accumulated_interference_ue - self.system.thermal_noise])
 
         # calculate INR at the system
         self.system.inr = np.array([self.system.rx_interference - self.system.thermal_noise])
@@ -323,6 +349,8 @@ class SimulationFullDuplex(Simulation):
             self.results.system_dl_inr_scaled.extend([self.system_dl_inr + 10*math.log10(self.param_system.inr_scaling)])
         
         bs_active = np.where(self.bs.active)[0]
+        total_ue_tput = 0
+        total_bs_tput = 0
         for bs in bs_active:
             ue = self.link[bs]
             self.results.imt_path_loss.extend(self.path_loss_imt[bs,ue])
@@ -363,7 +391,7 @@ class SimulationFullDuplex(Simulation):
             tput = tput*self.ue.bandwidth[ue]
             self.results.imt_dl_tput.extend(tput.tolist())
             
-            total_tput = np.sum(tput)
+            total_ue_tput += np.sum(tput)
             
             tput = self.calculate_imt_tput(self.bs.sinr[bs],
                                            self.parameters.imt.ul_sinr_min,
@@ -372,8 +400,7 @@ class SimulationFullDuplex(Simulation):
             tput = tput*self.bs.bandwidth[bs]
             self.results.imt_ul_tput.extend(tput.tolist())
             
-            total_tput = np.sum(tput) + total_tput
-            self.results.imt_total_tput.extend([total_tput])
+            total_bs_tput += np.sum(tput)
 
             if self.parameters.imt.interfered_with:
                 tput_ext = self.calculate_imt_tput(self.ue.sinr_ext[ue],
@@ -415,6 +442,10 @@ class SimulationFullDuplex(Simulation):
             self.results.imt_ul_sinr.extend(self.bs.sinr[bs].tolist())
             self.results.imt_ul_snr.extend(self.bs.snr[bs].tolist())
             self.results.imt_ul_bs_interf.extend(self.bs.total_interference[bs].tolist())
+            
+        self.results.imt_total_tput.extend([total_ue_tput + total_bs_tput])
+        self.results.imt_dl_total_tput.extend([total_ue_tput])
+        self.results.imt_ul_total_tput.extend([total_bs_tput])
             
         if write_to_file:
             self.results.write_files(snapshot_number)

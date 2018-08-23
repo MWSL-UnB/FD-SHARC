@@ -40,7 +40,7 @@ class PropagationTerSimple(Propagation):
                                                    frequency=f)
 
         clutter_loss = self.clutter.get_loss(frequency=f,
-                                             distance_2D=d,
+                                             distance=d,
                                              loc_percentage=p,
                                              station_type=StationType.FSS_ES)
 
@@ -48,7 +48,6 @@ class PropagationTerSimple(Propagation):
 
         loss = free_space_loss + building_loss + clutter_loss
         loss = np.repeat(loss, number_of_sectors, 1)
-
 
         return loss
 

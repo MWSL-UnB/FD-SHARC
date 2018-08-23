@@ -40,10 +40,11 @@ class AntennaSectorF1336(Antenna):
         self.azimuth = azimuth
 
         self.g_max = par.element_max_g
+        self.downtilt_deg = downtilt_deg
         self.downtilt_rad = downtilt_deg / 180 * np.pi
-        self.phi_deg_3db = par.element_phi_3db
-        if par.element_theta_3db > 0:
-            self.theta_deg_3db = par.element_theta_3db
+        self.phi_deg_3db = par.element_phi_deg_3db
+        if par.element_theta_deg_3db > 0:
+            self.theta_deg_3db = par.element_theta_deg_3db
         else:
             if self.phi_deg_3db > 120.:
                 sys.stderr.write("ERROR\nvertical beamwidth must be givem if horizontal beamwidth > 120 degrees")
@@ -64,6 +65,14 @@ class AntennaSectorF1336(Antenna):
 
         self.g_hr_180 = -12. + 10 * np.log10(1 + 8 * self.k_a) - 15 * np.log10(180/self.theta_deg_3db)
         self.g_hr_0 = 0
+        
+        # antenna normalization
+        self.normalize = par.normalization
+        self.correction_factor = 0.0
+        if self.normalize:
+            # Load co-channel data
+            self.norm_data = par.normalization_data
+            self.correction_factor = self.norm_data["correction_factor"]
 
     def horizontal_pattern(self, phi: np.array) -> {np.array, float}:
         """
@@ -151,7 +160,7 @@ class AntennaSectorF1336(Antenna):
         compression_ratio = (gain_hor - self.g_hr_180)/(self.g_hr_0 - self.g_hr_180)
         gain = self.g_max + gain_hor + compression_ratio * self.vertical_pattern(theta)
 
-        return gain
+        return gain + self.correction_factor
     
     def to_local_coord(self,phi,theta):
         """
@@ -182,8 +191,8 @@ if __name__ == '__main__':
     param = ParametersAntennaImt()
 
     param.element_max_g = 15
-    param.element_phi_3db = 65
-    param.element_theta_3db = 0
+    param.element_phi_deg_3db = 65
+    param.element_theta_deg_3db = 0
 
     # 0 degrees tilt
     elevation = 0
@@ -192,8 +201,8 @@ if __name__ == '__main__':
 
     antenna = AntennaSectorF1336(param,downtilt_deg,elevation,azimuth)
 
-    phi_v = np.arange(-180,180, step = 5)
-    theta_v = np.arange(0,180, step = 3)
+    phi_v = np.linspace(-180,180)
+    theta_v = np.linspace(0,180)
 
     pattern_hor_0deg = np.zeros(phi_v.shape)
     pattern_hor_10deg = np.zeros(phi_v.shape)
@@ -281,3 +290,37 @@ if __name__ == '__main__':
 
     plt.legend()
     plt.show()
+    
+    # x degrees tilt 2
+    plt.close('all')
+    downtilt_deg = -10
+    antenna = AntennaSectorF1336(param,downtilt_deg,elevation,azimuth)
+
+    pattern_hor = antenna.calculate_gain(phi_vec=phi_v,theta_vec=100)
+
+    fig = plt.figure(1)
+    ax = fig.add_subplot(1,1,1)
+    ax.plot(phi_v, pattern_hor)
+    
+    ax.set_xlabel (r"$\varphi$ [graus]")
+    ax.set_ylabel (r"Ganho [dBi]")
+    ax.set_xlim(-180,180)
+    ax.grid(True)
+    fig.savefig("f1336_horizontal.pdf", bbox_inches='tight')
+    plt.show(ax)
+
+    pattern_ver = antenna.calculate_gain(phi_vec=0,theta_vec=theta_v)
+
+    fig = plt.figure(2)
+    ax = fig.add_subplot(1,1,1)
+    ax.plot(theta_v, pattern_ver)
+
+    ax.set_xlabel (r"$\theta$ [graus]")
+    ax.set_ylabel (r"Ganho [dBi]")
+    ax.set_xlim(0,180)
+    ax.grid(True)
+    fig.savefig("f1336_vertical.pdf", bbox_inches='tight')
+    plt.show(ax)
+
+    
+    

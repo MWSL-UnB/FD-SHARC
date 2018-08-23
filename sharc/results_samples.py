@@ -196,6 +196,22 @@ class ResultsSamples(Results):
             y_label = "Throughput [Mbits/s]"
             file_name = title
             self.plot_list.append(Plot(x, y, x_label, y_label, title, file_name))
+        if len(self.imt_dl_total_tput) > 0:
+            x = np.arange(len(self.imt_dl_total_tput))
+            y = np.array(self.imt_dl_total_tput)
+            title = "[IMT] Samples of DL total throughput"
+            x_label = "Number of samples"
+            y_label = "Throughput [Mbits/s]"
+            file_name = title
+            self.plot_list.append(Plot(x, y, x_label, y_label, title, file_name))
+        if len(self.imt_ul_total_tput) > 0:
+            x = np.arange(len(self.imt_ul_total_tput))
+            y = np.array(self.imt_ul_total_tput)
+            title = "[IMT] Samples of UL total throughput"
+            x_label = "Number of samples"
+            y_label = "Throughput [Mbits/s]"
+            file_name = title
+            self.plot_list.append(Plot(x, y, x_label, y_label, title, file_name))
         if len(self.imt_path_loss) > 0:
             x = np.arange(len(self.imt_path_loss))
             y = np.array(self.imt_path_loss)
@@ -418,6 +434,7 @@ class ResultsSamples(Results):
         self.imt_ul_inr = list()
         self.imt_ul_tput_ext = list()
         self.imt_ul_tput = list()
+        self.imt_ul_total_tput = list()
         
         self.imt_total_tput = list()
 
@@ -446,6 +463,7 @@ class ResultsSamples(Results):
         self.imt_dl_inr = list()
         self.imt_dl_tput_ext = list()
         self.imt_dl_tput = list()
+        self.imt_dl_total_tput = list()
         
         self.imt_bs_bs_path_loss = list()
         self.imt_ue_ue_path_loss = list()

@@ -13,6 +13,9 @@ from sharc.simulation_uplink import SimulationUplink
 from sharc.simulation_full_duplex import SimulationFullDuplex
 from sharc.parameters.parameters import Parameters
 
+import random
+import sys
+
 class Model(Observable):
     """
     Implements the Observable interface. It has a reference to the simulation
@@ -25,10 +28,8 @@ class Model(Observable):
         self.parameters = None
         self.param_file = None
         
-
     def add_observer(self, observer: Observer):
         Observable.add_observer(self, observer)
-        
         
     def set_param_file(self, param_file):
         self.param_file = param_file
@@ -51,11 +52,11 @@ class Model(Observable):
         self.parameters.read_params()
         
         if self.parameters.general.imt_link == "DOWNLINK":
-            self.simulation = SimulationDownlink(self.parameters)
+            self.simulation = SimulationDownlink(self.parameters, self.param_file)
         elif self.parameters.general.imt_link == "UPLINK":
-            self.simulation = SimulationUplink(self.parameters)
+            self.simulation = SimulationUplink(self.parameters, self.param_file)
         elif self.parameters.general.imt_link == "FULLDUPLEX":
-            self.simulation = SimulationFullDuplex(self.parameters)
+            self.simulation = SimulationFullDuplex(self.parameters, self.param_file)
         self.simulation.add_observer_list(self.observers)
 
         description = self.get_description()
@@ -66,12 +67,17 @@ class Model(Observable):
         self.current_snapshot = 0
         self.simulation.initialize(out_dir = self.out_dir)
         
+        random.seed( self.parameters.general.seed )
         
+        self.secondary_seeds = [None] * self.parameters.general.num_snapshots
+
+        max_seed = 2**32 - 1
+
+        for index in range(self.parameters.general.num_snapshots):
+            self.secondary_seeds[index] = random.randint(1, max_seed)
+
     def get_description(self) -> str:
-        if self.parameters.general.system == "FSS_SS":
-            param_system = self.parameters.fss_ss
-        if self.parameters.general.system == "FSS_ES":
-            param_system = self.parameters.fss_es        
+        param_system = self.simulation.param_system
         
         description = "\nIMT:\n" \
                             + "\tinterfered with: {:s}\n".format(str(self.parameters.imt.interfered_with)) \
@@ -101,7 +107,8 @@ class Model(Observable):
                                   message="Snapshot #" + str(self.current_snapshot))
 
         self.simulation.snapshot(write_to_file = write_to_file, 
-                                 snapshot_number = self.current_snapshot)
+                                 snapshot_number=self.current_snapshot,
+                                 seed = self.secondary_seeds[self.current_snapshot - 1])
             
     def is_finished(self) -> bool:
         """

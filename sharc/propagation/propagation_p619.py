@@ -13,9 +13,9 @@ from sharc.propagation.propagation_free_space import PropagationFreeSpace
 from sharc.propagation.propagation_clutter_loss import PropagationClutterLoss
 from sharc.propagation.propagation_building_entry_loss import PropagationBuildingEntryLoss
 from sharc.propagation.atmosphere import ReferenceAtmosphere
-from sharc.parameters.parameters_fss_ss import ParametersFssSs
 from sharc.support.enumerations import StationType
 from sharc.propagation.scintillation import Scintillation
+
 
 class PropagationP619(Propagation):
     """
@@ -25,12 +25,13 @@ class PropagationP619(Propagation):
         get_loss: Calculates path loss for earth-space link
     """
 
-    def __init__(self):
-        super().__init__()
-        self.clutter = PropagationClutterLoss()
-        self.free_space = PropagationFreeSpace()
-        self.building_entry = PropagationBuildingEntryLoss()
-        self.scintillation = Scintillation()
+    def __init__(self, random_number_gen: np.random.RandomState):
+        super().__init__(random_number_gen)
+
+        self.clutter = PropagationClutterLoss(self.random_number_gen)
+        self.free_space = PropagationFreeSpace(self.random_number_gen)
+        self.building_entry = PropagationBuildingEntryLoss(self.random_number_gen)
+        self.scintillation = Scintillation(self.random_number_gen)
         self.atmosphere = ReferenceAtmosphere()
 
         self.depolarization_loss = 1.5
@@ -40,6 +41,7 @@ class PropagationP619(Propagation):
         self.surf_water_dens_has_atmospheric_loss = []
         self.atmospheric_loss = []
         self.elevation_delta = .01
+
 
     def _get_atmospheric_gasses_loss(self, *args, **kwargs) -> float:
         """
@@ -220,7 +222,7 @@ class PropagationP619(Propagation):
                     atmospheric_gasses_loss + beam_spreading_attenuation + diffraction_loss)
             loss = np.repeat(loss, number_of_sectors, 1) + tropo_scintillation_loss
         else:
-            clutter_loss = self.clutter.get_loss(frequency=f,
+            clutter_loss = self.clutter.get_loss(frequency=f, distance=d,
                                                  elevation=elevation["free_space"],
                                                  station_type=StationType.FSS_SS)
             building_loss = self.building_entry.get_loss(f, elevation["apparent"]) * indoor_stations
@@ -235,6 +237,8 @@ if __name__ == '__main__':
     from sharc.parameters.parameters import Parameters
     import matplotlib.pyplot as plt
     import os
+    
+    rnd = np.random.RandomState()
 
     params = Parameters()
 
@@ -247,7 +251,7 @@ if __name__ == '__main__':
 
     sat_params = params.fss_ss
 
-    propagation = PropagationP619()
+    propagation = PropagationP619(rnd)
 
     ##########################
     # Plot atmospheric loss
@@ -282,9 +286,9 @@ if __name__ == '__main__':
     plt.grid(True)
 
 
-    plt.xlabel("apparent elevation (deg)")
-    plt.ylabel("Loss (dB)")
-    plt.title("Atmospheric Gasses Attenuation")
+    plt.xlabel("Elevação aparente [graus]")
+    plt.ylabel("Perda [dB]")
+#    plt.title("Atenuação por gases atmosféricos")
     plt.legend()
 
     altitude_vec = np.arange(0, 6.1, .5) * 1000
@@ -305,14 +309,14 @@ if __name__ == '__main__':
                                                                     earth_to_space)
 
     handles = plt.plot(altitude_vec / 1000, np.abs(attenuation))
-    plt.xlabel("altitude (km)")
-    plt.ylabel("Attenuation (dB)")
-    plt.title("Beam Spreading Attenuation")
+    plt.xlabel("Altitude [km]")
+    plt.ylabel("Atenuação [dB]")
+    plt.title("Atenuação por espalhamento de feixe")
 
     for line_handle, elevation in zip(handles, elevation_vec):
         line_handle.set_label("{}deg".format(elevation))
 
-    plt.legend(title="Elevation")
+    plt.legend(title="Elevação")
 
     plt.grid(True)
 
