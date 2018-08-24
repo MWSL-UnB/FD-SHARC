@@ -145,7 +145,7 @@ class SimulationFullDuplex(Simulation):
         Calculates the downlink and uplink SINR for each UE and BS.
         Self-interference is considered
         """    
-        ### Downlink SNIR
+        ### Downlink SINR
         bs_active = np.where(self.bs.active)[0]
         for bs in bs_active:
             ue = self.link[bs]

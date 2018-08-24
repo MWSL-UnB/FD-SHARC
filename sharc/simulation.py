@@ -173,7 +173,7 @@ class Simulation(ABC, Observable):
         """
         Calculates the path coupling loss from each station_a to all station_b.
         Result is returned as a numpy array with dimensions num_a x num_b
-        TODO: calculate coupling loss between activa stations only
+        TODO: calculate coupling loss between active stations only
         """
         # Calculate distance from transmitters to receivers. The result is a
         # num_bs x num_ue array
