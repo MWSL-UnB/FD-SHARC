@@ -44,6 +44,8 @@ class SimulationFullDuplexTest(unittest.TestCase):
         self.param.imt.guard_band_ratio = 0.1
         self.param.imt.ho_margin = 3
         self.param.imt.bs_load_probability = 1
+        self.param.imt.dl_load_imbalance = 1
+        self.param.imt.ul_load_imbalance = 1
         self.param.imt.num_resource_blocks = 10
         self.param.imt.bs_conducted_power = 10
         self.param.imt.bs_height = 6
@@ -382,17 +384,19 @@ class SimulationFullDuplexTest(unittest.TestCase):
                                rx_interference - thermal_noise,
                                delta=1e-2)        
         
-    def test_simulation_2bs_4ue_fss_es(self):
-        self.param.general.system = "FSS_ES"
+    def test_simulation_2bs_4ue_fss_ss_imbalance(self):
+        self.param.imt.dl_load_imbalance = 2.0
+        self.param.imt.ul_load_imbalance = 1.0/self.param.imt.dl_load_imbalance
         
-        self.simulation = SimulationFullDuplex(self.param,"")
+        self.param.general.system = "FSS_SS"
+
+        self.simulation = SimulationFullDuplex(self.param, "")
         self.simulation.initialize()
-        
-        
+
         self.simulation.bs_power_gain = 0
         self.simulation.ue_power_gain = 0
         
-        random_number_gen = np.random.RandomState()
+        random_number_gen = np.random.RandomState(10)
         
         self.simulation.bs = StationFactory.generate_imt_base_stations(self.param.imt,
                                                                        self.param.antenna_imt,
@@ -405,28 +409,26 @@ class SimulationFullDuplexTest(unittest.TestCase):
                                                             self.param.antenna_imt,
                                                             self.simulation.topology,
                                                             random_number_gen)
-        
         self.simulation.ue.x = np.array([20, 70, 110, 170])
         self.simulation.ue.y = np.array([ 0,  0,   0,   0])
         self.simulation.ue.antenna = np.array([AntennaOmni(10), AntennaOmni(11), AntennaOmni(22), AntennaOmni(23)])
         self.simulation.ue.active = np.ones(4, dtype=bool)
         
+        # test connection method
         self.simulation.connect_ue_to_bs()
-        self.simulation.propagation_imt = PropagationFactory.create_propagation(self.param.imt.channel_model,
-                                                                                self.param, random_number_gen)
-        self.simulation.propagation_system = PropagationFactory.create_propagation(self.param.fss_ss.channel_model,
-                                                                                   self.param, random_number_gen)
-        self.simulation.coupling_loss_imt = self.simulation.calculate_coupling_loss(self.simulation.bs, 
-                                                                                    self.simulation.ue,
-                                                                                    self.simulation.propagation_imt)
-        self.simulation.scheduler()
-        self.simulation.power_control()
+        self.assertEqual(self.simulation.link, {0: [0,1], 1: [2,3]})
+        
+        # Test selection method
+        self.simulation.select_ue(random_number_gen)
+        self.assertEqual(self.simulation.link, {0: [0,1], 1: [3,2]})
+        self.assertEqual(self.simulation.link_dl, {0: [0,1], 1: [3,2]})
+        self.assertEqual(self.simulation.link_ul, {0: [1], 1: [3]})
         
         
 if __name__ == '__main__':
-    unittest.main()
+#    unittest.main()
     # Run single test
-#    suite = unittest.TestSuite()
-#    suite.addTest(SimulationFullDuplexTest("test_simulation_2bs_4ue_fss_ss"))
-#    runner = unittest.TextTestRunner()
-#    runner.run(suite)
+    suite = unittest.TestSuite()
+    suite.addTest(SimulationFullDuplexTest("test_simulation_2bs_4ue_fss_ss_imbalance"))
+    runner = unittest.TextTestRunner()
+    runner.run(suite)

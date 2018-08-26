@@ -106,6 +106,20 @@ class SimulationFullDuplex(Simulation):
         
         self.collect_results(write_to_file, snapshot_number)
 
+    def select_ue(self, random_number_gen: np.random.RandomState):
+        super().select_ue(random_number_gen)
+        
+        bs_active = np.where(self.bs.active)[0]
+        for bs in bs_active:
+            # From the connected UEs, define if they are receiving DL information...
+            self.link_dl[bs] = self.link[bs]
+                
+            # ... or transmitting UL information
+            ul_ues = np.where(random_number_gen.rand(len(self.link[bs])) \
+                              < self.parameters.imt.ul_load_imbalance)[0]
+            ul_link = np.array(self.link[bs])[ul_ues]
+            self.link_ul[bs] = list(ul_link)
+
 
     def power_control(self):
         """
