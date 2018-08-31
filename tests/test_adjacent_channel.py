@@ -31,6 +31,7 @@ class SimulationAdjacentTest(unittest.TestCase):
         self.param.general.suppress_large_results = False
 
         self.param.imt.topology = "SINGLE_BS"
+        self.param.imt.wrap_around = False
         self.param.imt.num_macrocell_sites = 19
         self.param.imt.num_clusters = 2
         self.param.imt.intersite_distance = 150
@@ -181,6 +182,8 @@ class SimulationAdjacentTest(unittest.TestCase):
         # test connection method
         self.simulation.connect_ue_to_bs()
         self.assertEqual(self.simulation.link, {0: [0,1], 1: [2,3]})
+        self.simulation.select_ue(random_number_gen)
+        self.simulation.link = {0:[0,1],1:[2,3]}
 
         # We do not test the selection method here because in this specific
         # scenario we do not want to change the order of the UE's
@@ -274,6 +277,8 @@ class SimulationAdjacentTest(unittest.TestCase):
         # test connection method
         self.simulation.connect_ue_to_bs()
         self.assertEqual(self.simulation.link, {0: [0,1], 1: [2,3]})
+        self.simulation.select_ue(random_number_gen)
+        self.simulation.link = {0:[0,1],1:[2,3]}
 
         # We do not test the selection method here because in this specific
         # scenario we do not want to change the order of the UE's

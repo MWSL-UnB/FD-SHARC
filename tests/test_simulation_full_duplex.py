@@ -32,6 +32,7 @@ class SimulationFullDuplexTest(unittest.TestCase):
         self.param.general.suppress_large_results = False
         
         self.param.imt.topology = "SINGLE_BS"
+        self.param.imt.wrap_around = False
         self.param.imt.num_macrocell_sites = 19
         self.param.imt.num_clusters = 2
         self.param.imt.intersite_distance = 150
