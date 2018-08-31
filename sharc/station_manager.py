@@ -109,7 +109,7 @@ class StationManager(object):
         distance[idx0] = np.nan
         return distance
     
-    def get_dist_angles_wrap_around(self, station) -> np.array:
+    def get_dist_angles_wrap_around(self, station,return_dist=False) -> np.array:
         """
         Calcualtes distances and angles using the wrap around technique
         Parameters:
@@ -155,6 +155,8 @@ class StationManager(object):
         # Calculate 3D distance
         distance_3D = np.sqrt(np.power(distance_2D, 2) +
                               np.power(station.height - self.height[:,np.newaxis], 2))
+        
+        if return_dist: return distance_2D, distance_3D
             
         # Calcualte pointing vector
         point_vec_x = cluster_x[cluster_num,np.arange(station.num_stations)] \

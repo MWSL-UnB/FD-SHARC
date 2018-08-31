@@ -252,13 +252,17 @@ class Simulation(ABC, Observable):
             self.imt_system_antenna_gain = gain_b
         # IMT <-> IMT
         else:
-            d_2D = self.bs_to_ue_d_2D
-            d_3D = self.bs_to_ue_d_3D
+            if self.wrap_around_enabled:
+                d_2D, d_3D = station_a.get_dist_angles_wrap_around(station_b,
+                                                                   return_dist=True)
+            else:
+                d_2D = station_a.get_distance_to(station_b)
+                d_3D = station_a.get_3d_distance_to(station_b)
             freq = self.parameters.imt.frequency
             
             path_loss = propagation.get_loss(distance_3D=d_3D,
                                              distance_2D=d_2D,
-                                             frequency=self.parameters.imt.frequency*np.ones(d_2D.shape),
+                                             frequency=freq*np.ones(d_2D.shape),
                                              indoor_stations=np.tile(station_b.indoor, (station_a.num_stations, 1)),
                                              bs_height=station_a.height,
                                              ue_height=station_b.height,
@@ -276,7 +280,7 @@ class Simulation(ABC, Observable):
             else:
                 gain_b = np.transpose(self.calculate_gains(station_b, station_a))
 
-        # collect IMT BS and UE antenna gain samples
+        # collect IMT BS and UE antenna gain and path loss samples
         if station_a.station_type is StationType.IMT_BS and station_b.station_type is StationType.IMT_UE:
             self.path_loss_imt = path_loss
             self.imt_bs_antenna_gain = gain_a
@@ -391,13 +395,23 @@ class Simulation(ABC, Observable):
                 theta = np.repeat(theta,self.parameters.imt.ue_k,0)
                 beams_idx = np.tile(np.arange(self.parameters.imt.ue_k),self.bs.num_stations)
             elif(station_2.station_type is StationType.IMT_BS):
+                if self.wrap_around_enabled:
+                    d_2D, d_3D, phi, theta = station_1.get_dist_angles_wrap_around(station_2)
+                else:
+                    phi, theta = station_1.get_pointing_vector_to(station_2)
                 phi = np.repeat(phi,self.parameters.imt.ue_k,1)
                 theta = np.repeat(theta,self.parameters.imt.ue_k,1)
                 station_2_active = np.where(np.repeat(station_2.active,self.parameters.imt.ue_k,0))[0]
                 beams_idx = np.tile(np.arange(self.parameters.imt.ue_k),self.bs.num_stations)
 
         elif(station_1.station_type is StationType.IMT_UE):
-            phi, theta = station_1.get_pointing_vector_to(station_2)
+            ue_wrap_around = (station_2.station_type is StationType.IMT_UE \
+                              or station_2.station_type is StationType.IMT_BS) \
+                              and self.wrap_around_enabled
+            if ue_wrap_around:
+                d_2D, d_3D, phi, theta = station_1.get_dist_angles_wrap_around(station_2)
+            else:
+                phi, theta = station_1.get_pointing_vector_to(station_2)
             beams_idx = np.zeros(len(station_2_active),dtype=int)
 
         elif(station_1.station_type is StationType.FSS_SS or \

@@ -29,6 +29,7 @@ class SimulationIndoorTest(unittest.TestCase):
         self.param.general.results_format = "SAMPLES"
 
         self.param.imt.topology = "INDOOR"
+        self.param.imt.wrap_around = False
         self.param.imt.num_macrocell_sites = 19
         self.param.imt.num_clusters = 1
         self.param.imt.intersite_distance = 339
