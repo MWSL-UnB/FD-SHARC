@@ -424,6 +424,56 @@ class SimulationFullDuplexTest(unittest.TestCase):
         self.assertEqual(self.simulation.link_dl, {0: [0,1], 1: [3,2]})
         self.assertEqual(self.simulation.link_ul, {0: [1], 1: [3]})
         
+        self.simulation.propagation_imt = PropagationFactory.create_propagation(self.param.imt.channel_model,
+                                                                                self.param, random_number_gen)
+        self.simulation.propagation_system = PropagationFactory.create_propagation(self.param.fss_ss.channel_model,
+                                                                                   self.param, random_number_gen)
+        
+        # test coupling loss method
+        self.simulation.coupling_loss_imt = self.simulation.calculate_coupling_loss(self.simulation.bs, 
+                                                                                    self.simulation.ue,
+                                                                                    self.simulation.propagation_imt)
+        npt.assert_allclose(self.simulation.coupling_loss_imt, 
+                            np.array([[78.47-1-10,  89.35-1-11,  93.27-1-22,  97.05-1-23], 
+                                      [97.55-2-10,  94.72-2-11,  91.53-2-22,  81.99-2-23]]), 
+                            atol=1e-2)
+
+        self.simulation.coupling_loss_imt_ue_ue =   self.simulation.calculate_coupling_loss(self.simulation.ue, 
+                                                                                            self.simulation.ue,
+                                                                                            self.simulation.propagation_imt)
+        npt.assert_allclose(self.simulation.coupling_loss_imt_ue_ue, 
+                            np.array([[np.nan     , 86.43-10-11, 91.53-10-22, 95.97-10-23],
+                                      [86.43-10-11, np.nan     , 84.49-11-22, 92.46-11-23],
+                                      [91.53-10-22, 84.49-11-22, np.nan     , 88.01-22-23],
+                                      [95.97-10-23, 92.46-11-23, 88.01-22-23, np.nan    ]]), 
+                            atol=1e-2)
+        
+        self.simulation.coupling_loss_imt_bs_bs =   self.simulation.calculate_coupling_loss(self.simulation.bs, 
+                                                                                            self.simulation.bs,
+                                                                                            self.simulation.propagation_imt)
+        
+        npt.assert_allclose(self.simulation.coupling_loss_imt_bs_bs, 
+                            np.array([[np.nan   , np.nan   , 98.47-1-2, 98.47-1-2],
+                                      [98.47-1-2, 98.47-1-2, np.nan   , np.nan   ]]), 
+                            atol=1e-2)
+       
+        # test scheduler and bandwidth allocation
+        self.simulation.scheduler()
+        bandwidth_per_ue = math.trunc((1 - 0.1)*100/2)       
+        npt.assert_allclose(self.simulation.ue.bandwidth, bandwidth_per_ue*np.ones(4), atol=1e-2)
+        
+        #test power control
+        # there is no power control, so BSs and UEs will transmit at maximum 
+        # power
+        self.simulation.power_control()
+        p_tx = 10 + 0 - 3 - 10*math.log10(2)
+        npt.assert_allclose(self.simulation.bs.tx_power[0], np.array([p_tx, p_tx]), atol=1e-2)
+        npt.assert_allclose(self.simulation.ue.tx_power, 20*np.ones(4))
+        
+        # test method that calculates SINR 
+        self.simulation.calculate_sinr()
+        
+        
         
 if __name__ == '__main__':
 #    unittest.main()
