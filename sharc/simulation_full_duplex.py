@@ -224,22 +224,26 @@ class SimulationFullDuplex(Simulation):
                 ue_interferer_idx = [k in ui for k in self.link_dl[bi]]
                 is_interfered = np.logical_and(ue_interferer_idx,ue_interfered_idx)
                 interference_ue = -np.inf*np.ones_like(ue)
-                ui = np.array(ui)[is_interfered[ue_interferer_idx]]
+                ui = list(np.array(ui)[is_interfered[ue_interferer_idx]])
                 interference_ue[is_interfered[ue_interfered_idx]] = self.ue.tx_power[ui] \
                                                                     - self.parameters.imt.ue_ohmic_loss \
                                                                     - self.parameters.imt.ue_body_loss \
                                                                     - self.coupling_loss_imt[bs,ui] \
                                                                     - self.parameters.imt.bs_ohmic_loss
                      
-                bint = list(compress(self.link_dl[bi],ue_interfered_idx))
+                bint = list(compress(np.arange(bi*self.parameters.imt.ue_k,\
+                                               (bi+1)*self.parameters.imt.ue_k)\
+                                     ,ue_interfered_idx))
                 interference_bs = self.bs.tx_power[bi][ue_interfered_idx] \
                                   - self.parameters.imt.bs_ohmic_loss \
                                   - self.coupling_loss_imt_bs_bs[bs,bint]
                                 
-                self.bs.rx_interference[bs] = 10*np.log10( \
+                self.bs.rx_interference[bs][ue_interfered_idx] = 10*np.log10( \
                     np.power(10, 0.1*self.bs.rx_interference[bs][ue_interfered_idx])
                     + np.power(10, 0.1*interference_ue) \
                     + np.power(10, 0.1*interference_bs))
+                
+            self.bs.rx_interference[bs] = self.bs.rx_interference[bs][ue_interfered_idx]
                 
             # calculate self interference
             self.bs.self_interference[bs] = -np.inf*np.ones_like(self.link_dl[bs])
