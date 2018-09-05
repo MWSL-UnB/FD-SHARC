@@ -384,6 +384,7 @@ class SimulationFullDuplex(Simulation):
         total_bs_tput = 0
         for bs in bs_active:
             ue = self.link[bs]
+            ue_ul = self.link_ul[bs]
             self.results.imt_path_loss.extend(self.path_loss_imt[bs,ue])
             self.results.imt_coupling_loss.extend(self.coupling_loss_imt[bs,ue])
             
@@ -459,7 +460,7 @@ class SimulationFullDuplex(Simulation):
             self.results.system_imt_bs_antenna_gain.extend(self.system_imt_bs_antenna_gain[0,active_beams])
             self.results.imt_bs_system_antenna_gain.extend(self.imt_bs_system_antenna_gain[0,active_beams])
             
-            self.results.system_ul_coupling_loss.extend(self.coupling_loss_imt_ue_system[ue])
+            self.results.system_ul_coupling_loss.extend(self.coupling_loss_imt_ue_system[ue_ul])
             self.results.system_dl_coupling_loss.extend([self.coupling_loss_imt_bs_system[bs]])
 
             self.results.imt_dl_tx_power.extend(self.bs.tx_power[bs].tolist())
@@ -468,7 +469,7 @@ class SimulationFullDuplex(Simulation):
             self.results.imt_dl_snr.extend(self.ue.snr[ue].tolist())
             self.results.imt_dl_ue_interf.extend(self.ue.total_interference[ue].tolist())
             
-            self.results.imt_ul_tx_power.extend(self.ue.tx_power[ue].tolist())
+            self.results.imt_ul_tx_power.extend(self.ue.tx_power[ue_ul].tolist())
             self.results.imt_ul_rx_power.extend(self.bs.rx_power[bs].tolist())
             self.results.imt_ul_sinr.extend(self.bs.sinr[bs].tolist())
             self.results.imt_ul_snr.extend(self.bs.snr[bs].tolist())
