@@ -379,9 +379,9 @@ class SimulationFullDuplex(Simulation):
     def collect_results(self, write_to_file: bool, snapshot_number: int):
         if not self.parameters.imt.interfered_with:
             self.results.system_inr.extend(self.system.inr.tolist())
-            self.results.system_inr_scaled.extend([self.system.inr + 10*math.log10(self.param_system.inr_scaling)])
-            self.results.system_ul_inr_scaled.extend(self.system_ul_inr + 10*math.log10(self.param_system.inr_scaling))
-            self.results.system_dl_inr_scaled.extend([self.system_dl_inr + 10*math.log10(self.param_system.inr_scaling)])
+            self.results.system_inr_scaled.extend((self.system.inr + 10*math.log10(self.param_system.inr_scaling)).tolist())
+            self.results.system_ul_inr_scaled.extend((self.system_ul_inr + 10*math.log10(self.param_system.inr_scaling)).tolist())
+            self.results.system_dl_inr_scaled.extend((self.system_dl_inr + 10*math.log10(self.param_system.inr_scaling)).tolist())
         
         bs_active = np.where(self.bs.active)[0]
         total_ue_tput = 0
