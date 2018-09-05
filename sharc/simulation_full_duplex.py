@@ -5,6 +5,7 @@ Created on Tue Sep 12 17:21:06 2017
 @author: Calil
 """
 
+from itertools import compress
 import numpy as np
 import math
 
@@ -115,8 +116,7 @@ class SimulationFullDuplex(Simulation):
             self.link_dl[bs] = self.link[bs]
                 
             # ... or transmitting UL information
-            ul_ues = np.where(random_number_gen.rand(len(self.link[bs])) \
-                              < self.parameters.imt.ul_load_imbalance)[0]
+            ul_ues = random_number_gen.rand(len(self.link[bs])) < self.parameters.imt.ul_load_imbalance
             ul_link = np.array(self.link[bs])[ul_ues]
             self.link_ul[bs] = list(ul_link)
 
@@ -174,14 +174,14 @@ class SimulationFullDuplex(Simulation):
                 #  Interference from BSs
                 interference_bs = self.bs.tx_power[bi] - self.coupling_loss_imt[bi,ue] \
                                  - self.parameters.imt.ue_body_loss - self.parameters.imt.ue_ohmic_loss
-                            
-                interference_ue = -5000*np.ones_like(self.link_dl[bi])
+                           
+                # Interference from UEs
+                interference_ue = -np.inf*np.ones_like(self.link_dl[bi])
                 ue_interf = self.link_ul[bi]
                 ue_int_idx = [k in ue_interf for k in self.link_dl[bi]]
-                # Interference from UEs
-                print(ue_int_idx)
+                interfered_ue = list(compress(ue,ue_int_idx))
                 interference_ue[ue_int_idx] = self.ue.tx_power[ue_interf] \
-                                              - self.coupling_loss_imt_ue_ue[ue_interf,ue[ue_int_idx]] \
+                                              - self.coupling_loss_imt_ue_ue[ue_interf,interfered_ue] \
                                               - 2*self.parameters.imt.ue_body_loss \
                                               - self.parameters.imt.ue_ohmic_loss
            
@@ -189,8 +189,10 @@ class SimulationFullDuplex(Simulation):
                     np.power(10, 0.1*self.ue.rx_interference[ue]) + \
                     np.power(10, 0.1*interference_bs) + \
                     np.power(10, 0.1*interference_ue))
-                
-            self.ue.self_interference[ue] = self.ue.tx_power[ue] - self.ue.sic[ue]
+               
+            self.ue.self_interference[ue] = -np.inf
+            ul_ues = self.link_ul[bs]
+            self.ue.self_interference[ul_ues] = self.ue.tx_power[ul_ues] - self.ue.sic[ul_ues]
 
         self.ue.thermal_noise = \
             10*math.log10(self.parameters.imt.BOLTZMANN_CONSTANT*self.parameters.imt.noise_temperature*1e3) + \
@@ -209,33 +211,40 @@ class SimulationFullDuplex(Simulation):
         bs_active = np.where(self.bs.active)[0]
         for bs in bs_active:
             ue = self.link_ul[bs]
+            ue_interfered_idx = [k in ue for k in self.link_dl[bs]]
             self.bs.rx_power[bs] = self.ue.tx_power[ue]  \
-                                        - self.parameters.imt.ue_ohmic_loss - self.parameters.imt.ue_body_loss \
-                                        - self.coupling_loss_imt[bs,ue] - self.parameters.imt.bs_ohmic_loss
+                                   - self.parameters.imt.ue_ohmic_loss - self.parameters.imt.ue_body_loss \
+                                   - self.coupling_loss_imt[bs,ue] - self.parameters.imt.bs_ohmic_loss
             # create a list of BSs that serve the interfering UEs
             bs_interf = [b for b in bs_active if b not in [bs]]
 
             # calculate intra system interference
             for bi in bs_interf:
                 ui = self.link_ul[bi]
-                interference_ue = -5000*np.ones_like(self.link_dl[bi])
-                ue_int_idx = [k in ui for k in self.link_dl[bi]]
-                interference_ue[ue_int_idx] = self.ue.tx_power[ui] \
-                                              - self.parameters.imt.ue_ohmic_loss \
-                                              - self.parameters.imt.ue_body_loss \
-                                              - self.coupling_loss_imt[bs,ui] \
-                                              - self.parameters.imt.bs_ohmic_loss
-                                
-                interference_bs = self.bs.tx_power[bi] - self.parameters.imt.bs_ohmic_loss \
-                                - self.coupling_loss_imt_bs_bs[bs,np.arange(bi*self.parameters.imt.ue_k,(bi+1)*self.parameters.imt.ue_k)]
+                ue_interferer_idx = [k in ui for k in self.link_dl[bi]]
+                is_interfered = np.logical_and(ue_interferer_idx,ue_interfered_idx)
+                interference_ue = -np.inf*np.ones_like(ue)
+                ui = np.array(ui)[is_interfered[ue_interferer_idx]]
+                interference_ue[is_interfered[ue_interfered_idx]] = self.ue.tx_power[ui] \
+                                                                    - self.parameters.imt.ue_ohmic_loss \
+                                                                    - self.parameters.imt.ue_body_loss \
+                                                                    - self.coupling_loss_imt[bs,ui] \
+                                                                    - self.parameters.imt.bs_ohmic_loss
+                     
+                bint = list(compress(self.link_dl[bi],ue_interfered_idx))
+                interference_bs = self.bs.tx_power[bi][ue_interfered_idx] \
+                                  - self.parameters.imt.bs_ohmic_loss \
+                                  - self.coupling_loss_imt_bs_bs[bs,bint]
                                 
                 self.bs.rx_interference[bs] = 10*np.log10( \
-                    np.power(10, 0.1*self.bs.rx_interference[bs])
+                    np.power(10, 0.1*self.bs.rx_interference[bs][ue_interfered_idx])
                     + np.power(10, 0.1*interference_ue) \
                     + np.power(10, 0.1*interference_bs))
                 
             # calculate self interference
-            self.bs.self_interference[bs] = self.bs.tx_power[bs] - self.bs.sic[bs]
+            self.bs.self_interference[bs] = -np.inf*np.ones_like(self.link_dl[bs])
+            self.bs.self_interference[bs][ue_interfered_idx] = self.bs.tx_power[bs][ue_interfered_idx] -\
+                                                               self.bs.sic[bs]
             
             # calculate N
             self.bs.thermal_noise[bs] = \
@@ -247,7 +256,7 @@ class SimulationFullDuplex(Simulation):
             self.bs.total_interference[bs] = \
                 10*np.log10(np.power(10, 0.1*self.bs.rx_interference[bs]) + \
                             np.power(10, 0.1*self.bs.thermal_noise[bs])   + \
-                            np.power(10, 0.1*self.bs.self_interference[bs]))
+                            np.power(10, 0.1*self.bs.self_interference[bs][ue_interfered_idx]))
                 
             # calculate SNR and SINR
             self.bs.sinr[bs] = self.bs.rx_power[bs] - self.bs.total_interference[bs]
