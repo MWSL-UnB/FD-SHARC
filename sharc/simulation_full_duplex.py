@@ -346,19 +346,19 @@ class SimulationFullDuplex(Simulation):
                     math.pow(10, 0.1*self.system.rx_interference) + \
                     total_interference_bs)
         
-        if not self.parameters.imt.interfered_with:
-            self.system_dl_inr = np.array([self.system.rx_interference - self.system.thermal_noise])
+        self.system_dl_inr = np.array([self.system.rx_interference - self.system.thermal_noise])
         
         # UE interference
-        accumulated_interference_ue = -500
+        accumulated_interference_ue = -np.inf
         for bs in bs_active:
-            ue = self.link[bs]
+            ue = self.link_ul[bs]
+            ue_interf_mask = [k in ue for k in self.link[bs]]
 
             interference_ue = self.ue.tx_power[ue] - self.parameters.imt.ue_ohmic_loss \
                               - self.parameters.imt.ue_body_loss \
                               - self.coupling_loss_imt_ue_system[ue]
                               
-            total_interference_ue = np.sum(weights*np.power(10, 0.1*interference_ue))
+            total_interference_ue = np.sum(weights[ue_interf_mask]*np.power(10, 0.1*interference_ue))
                      
             accumulated_interference_ue = 10*np.log10(np.power(10, 0.1*accumulated_interference_ue) + \
                                           total_interference_ue)
@@ -366,8 +366,7 @@ class SimulationFullDuplex(Simulation):
             self.system.rx_interference = 10*np.log10(np.power(10, 0.1*self.system.rx_interference) + \
                                           total_interference_ue)
         
-        if not self.parameters.imt.interfered_with:
-            self.system_ul_inr = np.array([accumulated_interference_ue - self.system.thermal_noise])
+        self.system_ul_inr = np.array([accumulated_interference_ue - self.system.thermal_noise])
 
         # calculate INR at the system
         self.system.inr = np.array([self.system.rx_interference - self.system.thermal_noise])
