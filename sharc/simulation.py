@@ -89,6 +89,8 @@ class Simulation(ABC, Observable):
         self.system = np.empty(0)
 
         self.link = dict()
+        self.link_dl = dict()
+        self.link_ul = dict()
 
         self.num_rb_per_bs = 0
         self.num_rb_per_ue = 0
@@ -149,9 +151,13 @@ class Simulation(ABC, Observable):
         self.system = np.empty(1)
 
         # this attribute indicates the list of UE's that are connected to each
-        # base station. The position the the list indicates the resource block
-        # group that is allocated to the given UE
+        # base station. For HD, the position the the list indicates the 
+        # resource block group that is allocated to the given UE
         self.link = dict([(bs,list()) for bs in range(num_bs)])
+        # This attribute indicates the list of UE's that are connected to each
+        # base station in DL and UL directions, respectivelly
+        self.link_dl = dict([(bs,list()) for bs in range(num_bs)])
+        self.link_ul = dict([(bs,list()) for bs in range(num_bs)])
 
         # calculates the number of RB per BS
         self.num_rb_per_bs = math.trunc((1-self.parameters.imt.guard_band_ratio)* \
@@ -180,7 +186,7 @@ class Simulation(ABC, Observable):
         """
         Calculates the path coupling loss from each station_a to all station_b.
         Result is returned as a numpy array with dimensions num_a x num_b
-        TODO: calculate coupling loss between activa stations only
+        TODO: calculate coupling loss between active stations only
         """
         if station_a.station_type is StationType.FSS_SS or \
            station_a.station_type is StationType.HAPS or \
@@ -354,7 +360,7 @@ class Simulation(ABC, Observable):
                                              180 - self.bs_to_ue_theta[bs,ue])
                     # set beam resource block group
                     self.bs_to_ue_beam_rbs[ue] = len(self.bs.antenna[bs].beams_list) - 1
-
+                    
 
     def scheduler(self):
         """

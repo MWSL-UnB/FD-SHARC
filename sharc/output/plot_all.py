@@ -6,11 +6,22 @@ from glob import glob
 files = glob('*.txt')
 
 for file in files:
-	# Collect and plot data
-	data = np.loadtxt(file,skiprows=1)
-	plt.figure()
-	plt.plot(data[:,0],data[:,1])
-	# Save figure
-	plot_name = file[:-4]
-	plt.title(plot_name)
-	plt.savefig(plot_name + ".png")
+    print(file)
+    # Collect and plot data
+    data = np.loadtxt(file,skiprows=1)
+    plt.figure()
+    if 'CDF' in file:
+        x = data[:,0]
+        y = data[:,1]
+    else:
+        values, base = np.histogram(data[:,1], bins=200)
+        cumulative = np.cumsum(values)
+        x = base[:-1]
+        y = cumulative / cumulative[-1]
+
+    plt.plot(x,y)
+    # Save figure
+    plot_name = file[:-4]
+    plt.title(plot_name)
+    plt.savefig(plot_name + ".png")
+    plt.close()

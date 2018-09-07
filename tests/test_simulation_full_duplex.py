@@ -45,6 +45,8 @@ class SimulationFullDuplexTest(unittest.TestCase):
         self.param.imt.guard_band_ratio = 0.1
         self.param.imt.ho_margin = 3
         self.param.imt.bs_load_probability = 1
+        self.param.imt.dl_load_imbalance = 1
+        self.param.imt.ul_load_imbalance = 1
         self.param.imt.num_resource_blocks = 10
         self.param.imt.bs_conducted_power = 10
         self.param.imt.bs_height = 6
@@ -199,9 +201,11 @@ class SimulationFullDuplexTest(unittest.TestCase):
         self.simulation.connect_ue_to_bs()
         self.assertEqual(self.simulation.link, {0: [0,1], 1: [2,3]})
         
-        # We do not test the selection method here because in this specific 
-        # scenario we do not want to change the order of the UE's 
-        #self.simulation.select_ue()
+        self.simulation.select_ue(random_number_gen)
+        self.assertEqual(self.simulation.link_dl,self.simulation.link_dl)
+        self.simulation.link = {0: [0,1], 1: [2,3]}
+        self.simulation.link_dl = {0: [0,1], 1: [2,3]}
+        self.simulation.link_ul = {0: [0,1], 1: [2,3]}
         
         self.simulation.propagation_imt = PropagationFactory.create_propagation(self.param.imt.channel_model,
                                                                                 self.param, random_number_gen)
@@ -383,17 +387,19 @@ class SimulationFullDuplexTest(unittest.TestCase):
                                rx_interference - thermal_noise,
                                delta=1e-2)        
         
-    def test_simulation_2bs_4ue_fss_es(self):
-        self.param.general.system = "FSS_ES"
+    def test_simulation_2bs_4ue_fss_ss_imbalance(self):
+        self.param.imt.dl_load_imbalance = 2.0
+        self.param.imt.ul_load_imbalance = 1.0/self.param.imt.dl_load_imbalance
         
-        self.simulation = SimulationFullDuplex(self.param,"")
+        self.param.general.system = "FSS_SS"
+
+        self.simulation = SimulationFullDuplex(self.param, "")
         self.simulation.initialize()
-        
-        
+
         self.simulation.bs_power_gain = 0
         self.simulation.ue_power_gain = 0
         
-        random_number_gen = np.random.RandomState()
+        random_number_gen = np.random.RandomState(10)
         
         self.simulation.bs = StationFactory.generate_imt_base_stations(self.param.imt,
                                                                        self.param.antenna_imt,
@@ -406,28 +412,207 @@ class SimulationFullDuplexTest(unittest.TestCase):
                                                             self.param.antenna_imt,
                                                             self.simulation.topology,
                                                             random_number_gen)
-        
         self.simulation.ue.x = np.array([20, 70, 110, 170])
         self.simulation.ue.y = np.array([ 0,  0,   0,   0])
         self.simulation.ue.antenna = np.array([AntennaOmni(10), AntennaOmni(11), AntennaOmni(22), AntennaOmni(23)])
         self.simulation.ue.active = np.ones(4, dtype=bool)
         
+        # test connection method
         self.simulation.connect_ue_to_bs()
+        self.assertEqual(self.simulation.link, {0: [0,1], 1: [2,3]})
+        
+        # Test selection method
+        self.simulation.select_ue(random_number_gen)
+        self.assertEqual(self.simulation.link, {0: [0,1], 1: [3,2]})
+        self.assertEqual(self.simulation.link_dl, {0: [0,1], 1: [3,2]})
+        self.assertEqual(self.simulation.link_ul, {0: [1], 1: [3]})
+        
         self.simulation.propagation_imt = PropagationFactory.create_propagation(self.param.imt.channel_model,
                                                                                 self.param, random_number_gen)
         self.simulation.propagation_system = PropagationFactory.create_propagation(self.param.fss_ss.channel_model,
                                                                                    self.param, random_number_gen)
+        
+        # test coupling loss method
         self.simulation.coupling_loss_imt = self.simulation.calculate_coupling_loss(self.simulation.bs, 
                                                                                     self.simulation.ue,
                                                                                     self.simulation.propagation_imt)
+        npt.assert_allclose(self.simulation.coupling_loss_imt, 
+                            np.array([[78.47-1-10,  89.35-1-11,  93.27-1-22,  97.05-1-23], 
+                                      [97.55-2-10,  94.72-2-11,  91.53-2-22,  81.99-2-23]]), 
+                            atol=1e-2)
+
+        self.simulation.coupling_loss_imt_ue_ue =   self.simulation.calculate_coupling_loss(self.simulation.ue, 
+                                                                                            self.simulation.ue,
+                                                                                            self.simulation.propagation_imt)
+        npt.assert_allclose(self.simulation.coupling_loss_imt_ue_ue, 
+                            np.array([[np.nan     , 86.43-10-11, 91.53-10-22, 95.97-10-23],
+                                      [86.43-10-11, np.nan     , 84.49-11-22, 92.46-11-23],
+                                      [91.53-10-22, 84.49-11-22, np.nan     , 88.01-22-23],
+                                      [95.97-10-23, 92.46-11-23, 88.01-22-23, np.nan    ]]), 
+                            atol=1e-2)
+        
+        self.simulation.coupling_loss_imt_bs_bs =   self.simulation.calculate_coupling_loss(self.simulation.bs, 
+                                                                                            self.simulation.bs,
+                                                                                            self.simulation.propagation_imt)
+        
+        npt.assert_allclose(self.simulation.coupling_loss_imt_bs_bs, 
+                            np.array([[np.nan   , np.nan   , 98.47-1-2, 98.47-1-2],
+                                      [98.47-1-2, 98.47-1-2, np.nan   , np.nan   ]]), 
+                            atol=1e-2)
+       
+        # test scheduler and bandwidth allocation
         self.simulation.scheduler()
+        bandwidth_per_ue = math.trunc((1 - 0.1)*100/2)       
+        npt.assert_allclose(self.simulation.ue.bandwidth, bandwidth_per_ue*np.ones(4), atol=1e-2)
+        
+        #test power control
+        # there is no power control, so BSs and UEs will transmit at maximum 
+        # power
         self.simulation.power_control()
+        p_tx = 10 + 0 - 3 - 10*math.log10(2)
+        npt.assert_allclose(self.simulation.bs.tx_power[0], np.array([p_tx, p_tx]), atol=1e-2)
+        npt.assert_allclose(self.simulation.ue.tx_power, 20*np.ones(4))
+        
+        # test method that calculates SINR 
+        self.simulation.calculate_sinr()
+        
+        # check UE received power
+        npt.assert_allclose(self.simulation.ue.rx_power, 
+                            np.array([-70.48, -80.36, -70.55, -60.00]), 
+                            atol=1e-2)
+        
+        # check UE received interference
+        npt.assert_allclose(self.simulation.ue.rx_interference,
+                            np.array([-53.97, -84.74, -42.48, -76.07]),
+                            atol=1e-2)
+
+        # check UE thermal noise
+        npt.assert_allclose(self.simulation.ue.thermal_noise, 
+                            np.array([-88.44, -88.44, -88.44, -88.44]),
+                            atol=1e-2)
+        
+        # check tx power
+        npt.assert_allclose(self.simulation.ue.tx_power, 
+                            np.array([ 20.0,  20.0,  20.0,  20.0]),
+                            atol=1e-2)
+        
+        # check self-interference
+        npt.assert_allclose(self.simulation.ue.self_interference, 
+                            np.array([-np.inf, -80, -np.inf, -80]),
+                            atol=1e-2)
+        
+        # check UE thermal noise + interference + self interference
+        npt.assert_allclose(self.simulation.ue.total_interference, 
+                            np.array([-53.97, -78.30, -42.49, -74.42]),
+                            atol=1e-2)
+        
+        # check SNR 
+        npt.assert_allclose(self.simulation.ue.snr, 
+                            np.array([-70.48 - (-88.44),  -80.36 - (-88.44), -70.55 - (-88.44),  -60.00 - (-88.44)]),
+                            atol=1e-2)
+        
+        # check SINR
+        npt.assert_allclose(self.simulation.ue.sinr, 
+                            np.array([-70.48 - (-53.97), -80.36 - (-78.30), -70.54 - (-42.49), -60.00 - (-74.42)]),
+                            atol=5e-2)
+        
+        # check BS received power
+        npt.assert_allclose(self.simulation.bs.rx_power[0], 
+                            np.array([-67.35]),
+                            atol=1e-2)
+        npt.assert_allclose(self.simulation.bs.rx_power[1], 
+                            np.array([-46.99]),
+                            atol=1e-2)
+        
+        # check BS received interference
+        npt.assert_allclose(self.simulation.bs.rx_interference[0], 
+                            np.array([-94.48]),
+                            atol=1e-2)
+        npt.assert_allclose(self.simulation.bs.rx_interference[1], 
+                            np.array([-94.48]),
+                            atol=1e-2)  
+
+        # check BS thermal noise
+        npt.assert_allclose(self.simulation.bs.thermal_noise, 
+                            np.array([-90.44, -90.44]),
+                            atol=1e-2)
+        
+        # check BS thermal noise + interference + SI
+        npt.assert_allclose(self.simulation.bs.total_interference[0], 
+                            np.array([-88.21]),
+                            atol=1e-2)
+        npt.assert_allclose(self.simulation.bs.total_interference[1], 
+                            np.array([-88.21]),
+                            atol=5e-2)  
+        
+        # check self-interference
+        npt.assert_allclose(self.simulation.bs.self_interference[0], 
+                            np.array([-np.inf, -96.01]),
+                            atol=1e-2)
+        npt.assert_allclose(self.simulation.bs.self_interference[1], 
+                            np.array([ -96.01, -np.inf]),
+                            atol=1e-2)
+        
+        # check SNR 
+        npt.assert_allclose(self.simulation.bs.snr[0], 
+                            np.array([23.09]),
+                            atol=1e-2)
+        npt.assert_allclose(self.simulation.bs.snr[1], 
+                            np.array([43.45]),
+                            atol=1e-2)
+        
+        # check SINR
+        npt.assert_allclose(self.simulation.bs.sinr[0], 
+                            np.array([20.85]),
+                            atol=1e-2)
+        npt.assert_allclose(self.simulation.bs.sinr[1], 
+                            np.array([41.22]),
+                            atol=1e-2)
+        
+        # Create system
+        self.simulation.system = StationFactory.generate_fss_space_station(self.param.fss_ss)
+        self.simulation.system.x = np.array([0])
+        self.simulation.system.y = np.array([0])
+        self.simulation.system.height = np.array([self.param.fss_ss.altitude])
+        
+        # test the method that calculates interference from IMT UE to FSS space station
+        self.simulation.calculate_external_interference()
+        
+        # check coupling loss
+        npt.assert_allclose(self.simulation.coupling_loss_imt_bs_system,
+                            np.array([203.52-51-1, 203.52-51-1, 203.52-51-2, 203.52-51-2]),
+                            atol=1e-2)
+        npt.assert_allclose(self.simulation.coupling_loss_imt_ue_system,
+                            np.array([203.52-51-10, 203.52-51-11, 203.52-51-22, 203.52-51-23]),
+                            atol=1e-2)
+        
+        # check interference generated by IMT to FSS space station
+        interference_bs = 10 - 10*np.log10(2) - np.array([203.52-51-1, 203.52-51-1, 203.52-51-2, 203.52-51-2])- 3
+        interference_ue = 20 - np.array([203.52-51-11, 203.52-51-23]) - 7
+        rx_interference = 10*math.log10(np.sum(np.power(10, 0.1*interference_bs)) +\
+                                        np.sum(np.power(10, 0.1*interference_ue)))
+
+        self.assertAlmostEqual(self.simulation.system.rx_interference,
+                               rx_interference,
+                               delta=1e-1)
+        
+        # check FSS space station thermal noise
+        thermal_noise = 10*np.log10(1.38064852e-23*950*1e3*100*1e6)
+        self.assertAlmostEqual(self.simulation.system.thermal_noise, 
+                               thermal_noise,
+                               delta=1e-2)
+        
+        # check INR at FSS space station
+        self.assertAlmostEqual(self.simulation.system.inr, 
+                               rx_interference - thermal_noise,
+                               delta=1e-1)  
+        
         
         
 if __name__ == '__main__':
     unittest.main()
     # Run single test
 #    suite = unittest.TestSuite()
-#    suite.addTest(SimulationFullDuplexTest("test_simulation_2bs_4ue_fss_ss"))
+#    suite.addTest(SimulationFullDuplexTest("test_simulation_2bs_4ue_fss_ss_imbalance"))
 #    runner = unittest.TextTestRunner()
 #    runner.run(suite)

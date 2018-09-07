@@ -79,6 +79,8 @@ class Parameters(object):
         self.imt.spectral_mask           = config.get("IMT", "spectral_mask")
         self.imt.guard_band_ratio        = config.getfloat("IMT", "guard_band_ratio")
         self.imt.bs_load_probability     = config.getfloat("IMT", "bs_load_probability")
+        self.imt.dl_load_imbalance       = config.getfloat("IMT", "dl_load_imbalance")
+        self.imt.ul_load_imbalance       = 1.0/self.imt.dl_load_imbalance
         self.imt.bs_conducted_power      = config.getfloat("IMT", "bs_conducted_power")
         self.imt.bs_height               = config.getfloat("IMT", "bs_height")
         self.imt.bs_noise_figure         = config.getfloat("IMT", "bs_noise_figure")
