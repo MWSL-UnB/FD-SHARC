@@ -11,18 +11,18 @@ import numpy as np
 import numpy.testing as npt
 import math
 
-from sharc.simulation_full_duplex import SimulationFullDuplex
+from sharc.simulation_bd_full_duplex import SimulationBDFullDuplex
 from sharc.parameters.parameters import Parameters
 from sharc.antenna.antenna_omni import AntennaOmni
 from sharc.station_factory import StationFactory
 from sharc.propagation.propagation_factory import PropagationFactory
 
-class SimulationFullDuplexTest(unittest.TestCase):
+class SimulationBDFullDuplexTest(unittest.TestCase):
 
     def setUp(self):
         self.param = Parameters()
         
-        self.param.general.imt_link = "FULLDUPLEX"
+        self.param.general.imt_link = "BD-FULLDUPLEX"
         self.param.general.enable_cochannel = True
         self.param.general.enable_adjacent_channel = False
         self.param.general.overwrite_output = True
@@ -173,7 +173,7 @@ class SimulationFullDuplexTest(unittest.TestCase):
     def test_simulation_2bs_4ue_fss_ss(self):
         self.param.general.system = "FSS_SS"
 
-        self.simulation = SimulationFullDuplex(self.param, "")
+        self.simulation = SimulationBDFullDuplex(self.param, "")
         self.simulation.initialize()
 
         self.simulation.bs_power_gain = 0
@@ -393,7 +393,7 @@ class SimulationFullDuplexTest(unittest.TestCase):
         
         self.param.general.system = "FSS_SS"
 
-        self.simulation = SimulationFullDuplex(self.param, "")
+        self.simulation = SimulationBDFullDuplex(self.param, "")
         self.simulation.initialize()
 
         self.simulation.bs_power_gain = 0
