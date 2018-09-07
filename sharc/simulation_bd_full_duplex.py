@@ -14,7 +14,7 @@ from sharc.parameters.parameters import Parameters
 from sharc.station_factory import StationFactory
 from sharc.propagation.propagation_factory import PropagationFactory
 
-class SimulationFullDuplex(Simulation):
+class SimulationBDFullDuplex(Simulation):
     """
     Implements the full duplex simulation
     """
