@@ -202,7 +202,7 @@ class SimulationBDFullDuplexTest(unittest.TestCase):
         self.assertEqual(self.simulation.link, {0: [0,1], 1: [2,3]})
         
         self.simulation.select_ue(random_number_gen)
-        self.assertEqual(self.simulation.link_dl,self.simulation.link_dl)
+        self.assertEqual(self.simulation.link,self.simulation.link_dl)
         self.simulation.link = {0: [0,1], 1: [2,3]}
         self.simulation.link_dl = {0: [0,1], 1: [2,3]}
         self.simulation.link_ul = {0: [0,1], 1: [2,3]}
