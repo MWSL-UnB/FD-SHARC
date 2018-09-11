@@ -180,7 +180,7 @@ class SimulationBDFullDuplexTest(unittest.TestCase):
         self.simulation.bs_power_gain = 0
         self.simulation.ue_power_gain = 0
         
-        random_number_gen = np.random.RandomState()
+        random_number_gen = np.random.RandomState(12)
         
         self.simulation.bs = StationFactory.generate_imt_base_stations(self.param.imt,
                                                                        self.param.antenna_imt,
@@ -429,7 +429,7 @@ class SimulationBDFullDuplexTest(unittest.TestCase):
                                                                        self.param.antenna_imt,
                                                                        self.simulation.topology,
                                                                        random_number_gen)
-        self.simulation.bs.antenna = np.array([AntennaOmni(1), AntennaOmni(2)])
+        self.simulation.bs.antenna = np.array([AntennaOmniBeam(), AntennaOmniBeam()])
         self.simulation.bs.active = np.ones(2, dtype=bool)
         
         self.simulation.ue = StationFactory.generate_imt_ue(self.param.imt,
@@ -438,7 +438,8 @@ class SimulationBDFullDuplexTest(unittest.TestCase):
                                                             random_number_gen)
         self.simulation.ue.x = np.array([20, 70, 110, 170])
         self.simulation.ue.y = np.array([ 0,  0,   0,   0])
-        self.simulation.ue.antenna = np.array([AntennaOmni(10), AntennaOmni(11), AntennaOmni(22), AntennaOmni(23)])
+        self.simulation.ue.antenna = np.array([AntennaOmniBeam(), AntennaOmniBeam(),
+                                               AntennaOmniBeam(), AntennaOmniBeam()])
         self.simulation.ue.active = np.ones(4, dtype=bool)
         
         # test connection method
@@ -455,6 +456,28 @@ class SimulationBDFullDuplexTest(unittest.TestCase):
                                                                                 self.param, random_number_gen)
         self.simulation.propagation_system = PropagationFactory.create_propagation(self.param.fss_ss.channel_model,
                                                                                    self.param, random_number_gen)
+        
+        # Test gains
+        bs_ue_gain = self.simulation.calculate_gains(self.simulation.bs, 
+                                                     self.simulation.ue)
+        npt.assert_equal(bs_ue_gain,np.array([[0,1,1,0],
+                                              [0,1,1,0]]))
+    
+        ue_ue_gain = self.simulation.calculate_gains(self.simulation.ue, 
+                                                     self.simulation.ue)
+        npt.assert_equal(ue_ue_gain,np.array([[0,0,0,0],
+                                              [0,0,0,0],
+                                              [0,0,0,0],
+                                              [0,0,0,0]]))
+    
+        bs_bs_gain = self.simulation.calculate_gains(self.simulation.bs, 
+                                                     self.simulation.bs)
+        npt.assert_equal(bs_bs_gain,np.array([[0,1,0,1],
+                                              [0,1,0,1]]))
+    
+        # Change antennas
+        self.simulation.bs.antenna = np.array([AntennaOmni(1), AntennaOmni(2)])
+        self.simulation.ue.antenna = np.array([AntennaOmni(10), AntennaOmni(11), AntennaOmni(22), AntennaOmni(23)])
         
         # test coupling loss method
         self.simulation.coupling_loss_imt = self.simulation.calculate_coupling_loss(self.simulation.bs, 
