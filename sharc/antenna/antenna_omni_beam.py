@@ -28,10 +28,13 @@ class AntennaOmniBeam(Antenna):
         n_direct = len(theta_vec)
 
         gains = np.zeros(n_direct)
+        
+        if not len(theta_vec) == len(phi_vec) == len(beams_l):
+            raise ValueError
 
         for g in range(n_direct):
             self.beams_list[beams_l[g]]
-            gains[g] = beams_l[g]
+            gains[g] = beams_l[g] + 1 if beams_l[g] != -1 else beams_l[g]
 
         return gains
 

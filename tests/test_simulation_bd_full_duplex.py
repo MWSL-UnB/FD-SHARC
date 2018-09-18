@@ -217,20 +217,20 @@ class SimulationBDFullDuplexTest(unittest.TestCase):
         # Test gains
         bs_ue_gain = self.simulation.calculate_gains(self.simulation.bs, 
                                                      self.simulation.ue)
-        npt.assert_equal(bs_ue_gain,np.array([[0,1,0,1],
-                                              [0,1,0,1]]))
+        npt.assert_equal(bs_ue_gain,np.array([[1,2,1,2],
+                                              [1,2,1,2]]))
     
         ue_ue_gain = self.simulation.calculate_gains(self.simulation.ue, 
                                                      self.simulation.ue)
-        npt.assert_equal(ue_ue_gain,np.array([[0,0,0,0],
-                                              [0,0,0,0],
-                                              [0,0,0,0],
-                                              [0,0,0,0]]))
+        npt.assert_equal(ue_ue_gain,np.array([[1,1,1,1],
+                                              [1,1,1,1],
+                                              [1,1,1,1],
+                                              [1,1,1,1]]))
     
         bs_bs_gain = self.simulation.calculate_gains(self.simulation.bs, 
                                                      self.simulation.bs)
-        npt.assert_equal(bs_bs_gain,np.array([[0,1,0,1],
-                                              [0,1,0,1]]))
+        npt.assert_equal(bs_bs_gain,np.array([[1,2,1,2],
+                                              [1,2,1,2]]))
         
         # Change antennas
         self.simulation.bs.antenna = np.array([AntennaOmni(1), AntennaOmni(2)])
@@ -460,20 +460,20 @@ class SimulationBDFullDuplexTest(unittest.TestCase):
         # Test gains
         bs_ue_gain = self.simulation.calculate_gains(self.simulation.bs, 
                                                      self.simulation.ue)
-        npt.assert_equal(bs_ue_gain,np.array([[0,1,1,0],
-                                              [0,1,1,0]]))
+        npt.assert_equal(bs_ue_gain,np.array([[1,2,2,1],
+                                              [1,2,2,1]]))
     
         ue_ue_gain = self.simulation.calculate_gains(self.simulation.ue, 
                                                      self.simulation.ue)
-        npt.assert_equal(ue_ue_gain,np.array([[0,0,0,0],
-                                              [0,0,0,0],
-                                              [0,0,0,0],
-                                              [0,0,0,0]]))
+        npt.assert_equal(ue_ue_gain,np.array([[1,1,1,1],
+                                              [1,1,1,1],
+                                              [1,1,1,1],
+                                              [1,1,1,1]]))
     
         bs_bs_gain = self.simulation.calculate_gains(self.simulation.bs, 
                                                      self.simulation.bs)
-        npt.assert_equal(bs_bs_gain,np.array([[0,1,0,1],
-                                              [0,1,0,1]]))
+        npt.assert_equal(bs_bs_gain,np.array([[1,2,1,2],
+                                              [1,2,1,2]]))
     
         # Change antennas
         self.simulation.bs.antenna = np.array([AntennaOmni(1), AntennaOmni(2)])
