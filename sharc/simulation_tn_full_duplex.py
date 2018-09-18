@@ -9,9 +9,12 @@ from itertools import compress
 import numpy as np
 import math
 
+from sharc.support.enumerations import StationType
+from sharc.station_manager import StationManager
 from sharc.simulation import Simulation
 from sharc.parameters.parameters import Parameters
 from sharc.station_factory import StationFactory
+from sharc.propagation.propagation import Propagation
 from sharc.propagation.propagation_factory import PropagationFactory
 
 class SimulationTNFullDuplex(Simulation):
@@ -68,19 +71,19 @@ class SimulationTNFullDuplex(Simulation):
         self.select_ue(random_number_gen)
         
         # Calculate coupling loss after beams are created
-        self.coupling_loss_imt = self.calculate_coupling_loss(self.bs, 
-                                                              self.ue,
-                                                              self.propagation_imt)
+        self.coupling_loss_imt = self.calculate_imt_coupling_loss(self.bs, 
+                                                                  self.ue,
+                                                                  self.propagation_imt)
         
         # UE to UE coupling loss
-        self.coupling_loss_imt_ue_ue = self.calculate_coupling_loss(self.ue,
-                                                                    self.ue,
-                                                                    self.propagation_imt)
+        self.coupling_loss_imt_ue_ue = self.calculate_imt_coupling_loss(self.ue,
+                                                                        self.ue,
+                                                                        self.propagation_imt)
         
         # BS to BS coupling loss
-        self.coupling_loss_imt_bs_bs = self.calculate_coupling_loss(self.bs,
-                                                                    self.bs,
-                                                                    self.propagation_imt)
+        self.coupling_loss_imt_bs_bs = self.calculate_imt_coupling_loss(self.bs,
+                                                                        self.bs,
+                                                                        self.propagation_imt)
         
         
         # Scheduler which divides the band equally among BSs and UEs
@@ -145,6 +148,119 @@ class SimulationTNFullDuplex(Simulation):
                                              180 - self.bs_to_ue_theta[bs,ue])
                 # set beam resource block group
                 self.bs_to_ue_beam_rbs[ue] = len(self.bs.antenna[bs].beams_list) - 1
+                
+        
+    def calculate_imt_gains(self,
+                        station_1: StationManager,
+                        station_2: StationManager,
+                        c_channel = True) -> np.array:
+        """
+        Calculates the gains of antennas in station_1 in the direction of
+        station_2
+        """
+        station_1_active = np.where(station_1.active)[0]
+        station_2_active = np.where(station_2.active)[0]
+
+        # Initialize variables (phi, theta, beams_idx)
+        if(station_1.station_type is StationType.IMT_BS):
+            # Define BS variables
+            if(station_2.station_type is StationType.IMT_UE):
+                phi = self.bs_to_ue_phi
+                theta = self.bs_to_ue_theta
+                idx_range = 1
+                beams_idx = self.bs_to_ue_beam_rbs
+            elif(station_2.station_type is StationType.IMT_BS):
+                if self.wrap_around_enabled:
+                    d_2D, d_3D, phi, theta = station_1.get_dist_angles_wrap_around(station_2)
+                else:
+                    phi, theta = station_1.get_pointing_vector_to(station_2)
+                idx_range = self.parameters.imt.ue_k*self.parameters.imt.ue_k_m
+                phi = np.repeat(phi,idx_range,1)
+                theta = np.repeat(theta,idx_range,1)
+                beams_idx = np.tile(np.arange(idx_range),self.bs.num_stations)
+            # Calculate gains
+            gains = np.zeros(phi.shape)
+            for k in station_1_active:
+                station_2_mask = np.logical_and(np.repeat(station_2.active,idx_range,0),
+                                                beams_idx < len(station_1.antenna[k].beams_list))
+                gains[k,station_2_mask] = station_1.antenna[k].calculate_gain(phi_vec=phi[k,station_2_mask],
+                                                                              theta_vec=theta[k,station_2_mask],
+                                                                              beams_l=beams_idx[station_2_mask])
+            return gains
+
+        elif(station_1.station_type is StationType.IMT_UE):
+            if self.wrap_around_enabled:
+                d_2D, d_3D, phi, theta = station_1.get_dist_angles_wrap_around(station_2)
+            else:
+                phi, theta = station_1.get_pointing_vector_to(station_2)
+            beams_idx = np.zeros(len(station_2_active),dtype=int)
+
+        # Calculate gains
+        gains = np.zeros(phi.shape)
+        for k in station_1_active:
+            gains[k,station_2_active] = station_1.antenna[k].calculate_gain(phi_vec=phi[k,station_2_active],
+                                                                            theta_vec=theta[k,station_2_active],
+                                                                            beams_l=beams_idx)
+        return gains
+    
+    def calculate_imt_coupling_loss(self,
+                                    station_a: StationManager,
+                                    station_b: StationManager,
+                                    propagation: Propagation,
+                                    c_channel = True) -> np.array:
+        
+        if station_a.station_type is StationType.IMT_BS and \
+           station_b.station_type is StationType.IMT_UE and \
+           self.parameters.imt.topology == "INDOOR":
+               elevation_angles = np.transpose(station_b.get_elevation(station_a))
+        else:
+            elevation_angles = None
+            
+        if self.wrap_around_enabled:
+            d_2D, d_3D = station_a.get_dist_angles_wrap_around(station_b,
+                                                                   return_dist=True)
+        else:
+            d_2D = station_a.get_distance_to(station_b)
+            d_3D = station_a.get_3d_distance_to(station_b)
+        freq = self.parameters.imt.frequency
+            
+        path_loss = propagation.get_loss(distance_3D=d_3D,
+                                         distance_2D=d_2D,
+                                         frequency=freq*np.ones(d_2D.shape),
+                                         indoor_stations=np.tile(station_b.indoor, (station_a.num_stations, 1)),
+                                         bs_height=station_a.height,
+                                         ue_height=station_b.height,
+                                         elevation=elevation_angles,
+                                         shadowing=self.parameters.imt.shadowing,
+                                         line_of_sight_prob=self.parameters.imt.line_of_sight_prob)
+        # define antenna gains
+        gain_a = self.calculate_imt_gains(station_a, station_b)
+        if station_a.station_type is StationType.IMT_BS and station_b.station_type is StationType.IMT_BS:
+            # BS <-> BS
+            idx_range = self.parameters.imt.ue_k*self.parameters.imt.ue_k_m
+            path_loss = np.repeat(path_loss,idx_range,1)
+            gain_b = np.zeros_like(gain_a)
+            for k in range(gain_b.shape[0]):
+                gain_b[k,:] = np.ravel(gain_a[:,np.arange(k*idx_range,(k+1)*idx_range)])
+        else:
+            gain_b = np.transpose(self.calculate_imt_gains(station_b, station_a))
+
+        # collect IMT BS and UE antenna gain and path loss samples
+        if station_a.station_type is StationType.IMT_BS and station_b.station_type is StationType.IMT_UE:
+            self.path_loss_imt = path_loss
+            self.imt_bs_antenna_gain = gain_a
+            self.imt_ue_antenna_gain = gain_b
+        elif station_a.station_type is StationType.IMT_BS and station_b.station_type is StationType.IMT_BS:
+            self.path_loss_imt_bs_bs = path_loss
+            self.imt_bs_bs_antenna_gain = gain_a
+        elif station_a.station_type is StationType.IMT_UE and station_b.station_type is StationType.IMT_UE:
+            self.path_loss_imt_ue_ue = path_loss
+            self.imt_ue_ue_antenna_gain = gain_a
+            
+        # calculate coupling loss
+        coupling_loss = np.squeeze(path_loss - gain_a - gain_b)
+
+        return coupling_loss
 
 
     def power_control(self):

@@ -13,6 +13,7 @@ import math
 from sharc.simulation_tn_full_duplex import SimulationTNFullDuplex
 from sharc.parameters.parameters import Parameters
 from sharc.antenna.antenna_omni import AntennaOmni
+from sharc.antenna.antenna_omni_beam import AntennaOmniBeam
 from sharc.station_factory import StationFactory
 from sharc.propagation.propagation_factory import PropagationFactory
 
@@ -184,7 +185,7 @@ class SimulationTNFullDuplexTest(unittest.TestCase):
                                                                        self.param.antenna_imt,
                                                                        self.simulation.topology,
                                                                        random_number_gen)
-        self.simulation.bs.antenna = np.array([AntennaOmni(1), AntennaOmni(2)])
+        self.simulation.bs.antenna = np.array([AntennaOmniBeam(), AntennaOmniBeam()])
         self.simulation.bs.active = np.ones(2, dtype=bool)
         
         self.simulation.ue = StationFactory.generate_imt_ue(self.param.imt,
@@ -193,13 +194,15 @@ class SimulationTNFullDuplexTest(unittest.TestCase):
                                                             random_number_gen)
         self.simulation.ue.x = np.array([20, 70, 110, 170])
         self.simulation.ue.y = np.array([ 0,  0,   0,   0])
-        self.simulation.ue.antenna = np.array([AntennaOmni(10), AntennaOmni(11), AntennaOmni(22), AntennaOmni(23)])
+        self.simulation.ue.antenna = np.array([AntennaOmniBeam(), AntennaOmniBeam(), 
+                                               AntennaOmniBeam(), AntennaOmniBeam()])
         self.simulation.ue.active = np.zeros(4, dtype=bool)
         
         # test connection method
         self.simulation.connect_ue_to_bs()
         self.assertEqual(self.simulation.link, {0: [0,1], 1: [2,3]})
         
+        # test selection method
         self.simulation.select_ue(random_number_gen)
         npt.assert_equal(self.simulation.link,{0: [0,1], 1: [2,3]})
         npt.assert_equal(self.simulation.link_dl,{0: [0], 1: [2]})
@@ -207,6 +210,65 @@ class SimulationTNFullDuplexTest(unittest.TestCase):
         npt.assert_equal(self.simulation.ue.active,
                          np.array([True,True,True,True]))
         npt.assert_equal(self.simulation.bs_to_ue_beam_rbs,np.array([0,1,0,1]))
+        
+        # Test gains
+        bs_ue_gain = self.simulation.calculate_imt_gains(self.simulation.bs, 
+                                                         self.simulation.ue)
+        npt.assert_equal(bs_ue_gain,np.array([[1,2,1,2],
+                                              [1,2,1,2]]))
+    
+        ue_bs_gain = self.simulation.calculate_imt_gains(self.simulation.ue, 
+                                                          self.simulation.bs)
+        npt.assert_equal(ue_bs_gain,np.array([[1,1],
+                                              [1,1],
+                                              [1,1],
+                                              [1,1]]))
+    
+        ue_ue_gain = self.simulation.calculate_imt_gains(self.simulation.ue, 
+                                                         self.simulation.ue)
+        npt.assert_equal(ue_ue_gain,np.array([[1,1,1,1],
+                                              [1,1,1,1],
+                                              [1,1,1,1],
+                                              [1,1,1,1]]))
+    
+        bs_bs_gain = self.simulation.calculate_imt_gains(self.simulation.bs, 
+                                                         self.simulation.bs)
+        npt.assert_equal(bs_bs_gain,np.array([[1,2,1,2],
+                                              [1,2,1,2]]))
+        
+        # Create propagation
+        self.simulation.propagation_imt = PropagationFactory.create_propagation(self.param.imt.channel_model,
+                                                                                self.param, random_number_gen)
+        self.simulation.propagation_system = PropagationFactory.create_propagation(self.param.fss_ss.channel_model,
+                                                                                   self.param, random_number_gen)
+        
+        # test coupling loss method
+        self.simulation.coupling_loss_imt = self.simulation.calculate_imt_coupling_loss(self.simulation.bs, 
+                                                                                        self.simulation.ue,
+                                                                                        self.simulation.propagation_imt)
+        npt.assert_allclose(self.simulation.coupling_loss_imt, 
+                            np.array([[78.47-1-1,  89.35-2-1,  93.27-1-1,  97.05-2-1], 
+                                      [97.55-1-1,  94.72-2-1,  91.53-1-1,  81.99-2-1]]), 
+                            atol=1e-2)
+
+        self.simulation.coupling_loss_imt_ue_ue =   self.simulation.calculate_imt_coupling_loss(self.simulation.ue, 
+                                                                                            self.simulation.ue,
+                                                                                            self.simulation.propagation_imt)
+        npt.assert_allclose(self.simulation.coupling_loss_imt_ue_ue, 
+                            np.array([[np.nan     , 86.43-1-1, 91.53-1-1, 95.97-1-1],
+                                      [86.43-1-1  , np.nan   , 84.49-1-1, 92.46-1-1],
+                                      [91.53-1-1  , 84.49-1-1, np.nan   , 88.01-1-1],
+                                      [95.97-1-1  , 92.46-1-1, 88.01-1-1, np.nan    ]]), 
+                            atol=1e-2)
+        
+        self.simulation.coupling_loss_imt_bs_bs =   self.simulation.calculate_imt_coupling_loss(self.simulation.bs, 
+                                                                                                self.simulation.bs,
+                                                                                                self.simulation.propagation_imt)
+        npt.assert_allclose(self.simulation.coupling_loss_imt_bs_bs, 
+                            np.array([[np.nan   , np.nan   , 98.47-1-2, 98.47-2-1],
+                                      [98.47-1-2, 98.47-2-1, np.nan   , np.nan   ]]), 
+                            atol=1e-2)
+        
         
     def test_simulation_2bs_4ue_fss_ss_imbalance(self):
         self.param.imt.dl_load_imbalance = 2.0
@@ -226,7 +288,7 @@ class SimulationTNFullDuplexTest(unittest.TestCase):
                                                                        self.param.antenna_imt,
                                                                        self.simulation.topology,
                                                                        random_number_gen)
-        self.simulation.bs.antenna = np.array([AntennaOmni(1), AntennaOmni(2)])
+        self.simulation.bs.antenna = np.array([AntennaOmniBeam(), AntennaOmniBeam()])
         self.simulation.bs.active = np.ones(2, dtype=bool)
         
         self.simulation.ue = StationFactory.generate_imt_ue(self.param.imt,
@@ -235,7 +297,8 @@ class SimulationTNFullDuplexTest(unittest.TestCase):
                                                             random_number_gen)
         self.simulation.ue.x = np.array([20, 70, 110, 170])
         self.simulation.ue.y = np.array([ 0,  0,   0,   0])
-        self.simulation.ue.antenna = np.array([AntennaOmni(10), AntennaOmni(11), AntennaOmni(22), AntennaOmni(23)])
+        self.simulation.ue.antenna = np.array([AntennaOmniBeam(), AntennaOmniBeam(), 
+                                               AntennaOmniBeam(), AntennaOmniBeam()])
         self.simulation.ue.active = np.zeros(4, dtype=bool)
         
         # test connection method
@@ -250,6 +313,36 @@ class SimulationTNFullDuplexTest(unittest.TestCase):
         npt.assert_equal(self.simulation.ue.active,
                          np.array([True,True,True,False]))
         npt.assert_equal(self.simulation.bs_to_ue_beam_rbs,np.array([0,1,0,-1]))
+        
+        # Test gains
+        bs_ue_gain = self.simulation.calculate_imt_gains(self.simulation.bs, 
+                                                         self.simulation.ue)
+        npt.assert_equal(bs_ue_gain,np.array([[1,2,1,0],
+                                              [1,0,1,0]]))
+    
+        ue_bs_gain = self.simulation.calculate_imt_gains(self.simulation.ue, 
+                                                          self.simulation.bs)
+        npt.assert_equal(ue_bs_gain,np.array([[1,1],
+                                              [1,1],
+                                              [1,1],
+                                              [0,0]]))
+    
+        ue_ue_gain = self.simulation.calculate_imt_gains(self.simulation.ue, 
+                                                         self.simulation.ue)
+        npt.assert_equal(ue_ue_gain,np.array([[1,1,1,0],
+                                              [1,1,1,0],
+                                              [1,1,1,0],
+                                              [0,0,0,0]]))
+    
+        bs_bs_gain = self.simulation.calculate_imt_gains(self.simulation.bs, 
+                                                         self.simulation.bs)
+        npt.assert_equal(bs_bs_gain,np.array([[1,2,1,2],
+                                              [1,0,1,0]]))
+    
+        # Change antennas
+        self.simulation.bs.antenna = np.array([AntennaOmni(1), AntennaOmni(2)])
+        self.simulation.ue.antenna = np.array([AntennaOmni(10), AntennaOmni(11), AntennaOmni(22), AntennaOmni(23)])
+        
         
 if __name__ == '__main__':
     unittest.main()
