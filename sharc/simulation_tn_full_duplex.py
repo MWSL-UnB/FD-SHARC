@@ -234,15 +234,23 @@ class SimulationTNFullDuplex(Simulation):
                                          shadowing=self.parameters.imt.shadowing,
                                          line_of_sight_prob=self.parameters.imt.line_of_sight_prob)
         # define antenna gains
-        gain_a = self.calculate_imt_gains(station_a, station_b)
         if station_a.station_type is StationType.IMT_BS and station_b.station_type is StationType.IMT_BS:
-            # BS <-> BS
+            # Path loss repeat
             idx_range = self.parameters.imt.ue_k*self.parameters.imt.ue_k_m
             path_loss = np.repeat(path_loss,idx_range,1)
-            gain_b = np.zeros_like(gain_a)
+            # Calculate and manipulate gains
+            all_gains = self.calculate_imt_gains(station_a, station_b)
+            gain_a = all_gains
+            gain_b = np.zeros_like(all_gains)
+
+            # loop in the current BS
             for k in range(gain_b.shape[0]):
-                gain_b[k,:] = np.ravel(gain_a[:,np.arange(k*idx_range,(k+1)*idx_range)])
+                # loop in the other BS
+                for m in range(gain_b.shape[1]):
+                    beam = k
+                    gain_b[k,m] = all_gains[m,beam]
         else:
+            gain_a = self.calculate_imt_gains(station_a, station_b)
             gain_b = np.transpose(self.calculate_imt_gains(station_b, station_a))
 
         # collect IMT BS and UE antenna gain and path loss samples
