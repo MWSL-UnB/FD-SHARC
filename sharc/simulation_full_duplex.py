@@ -163,8 +163,11 @@ class SimulationFullDuplex(Simulation):
         bs_active = np.where(self.bs.active)[0]
         for bs in bs_active:
             ue = self.link_dl[bs]
-            self.ue.rx_power[ue] = self.bs.tx_power[bs] - self.coupling_loss_imt[bs,ue] \
-                                     - self.parameters.imt.ue_body_loss - self.parameters.imt.ue_ohmic_loss
+
+            self.ue.rx_power[ue] = self.bs.tx_power[bs] - self.parameters.imt.bs_ohmic_loss \
+                                   - self.coupling_loss_imt[bs, ue] \
+                                   - self.parameters.imt.ue_body_loss \
+                                   - self.parameters.imt.ue_ohmic_loss
 
             # create a list with base stations that generate interference in ue_list
             bs_interf = [b for b in bs_active if b not in [bs]]
