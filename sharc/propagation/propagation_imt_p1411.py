@@ -16,7 +16,7 @@ class PropagationImtP1411(Propagation):
 
         self.fspl_to_los_dist = 4
         self.los_dist = 5
-        self.los_to_nlos_dist = 25
+        self.los_to_nlos_dist = 15
         self.nlos_dist = 30
 
         self.fspl_alpha = 2.0
@@ -82,7 +82,7 @@ class PropagationImtP1411(Propagation):
         loss = low_loss + (dist - low_dist)*(up_loss - low_loss)/(up_dist - low_dist)
 
         if self.shadow:
-            interp_sigma = low_sigma + (dist - low_sigma)*(up_sigma - low_sigma)/(up_dist - low_dist)
+            interp_sigma = low_sigma + (dist - low_dist)*(up_sigma - low_sigma)/(up_dist - low_dist)
             loss += self.random_number_gen.normal(0.0, interp_sigma)
 
         return loss
@@ -122,4 +122,43 @@ class PropagationImtP1411(Propagation):
 
 
 if __name__ == '__main__':
-    pass
+    # Imports
+    import matplotlib.pyplot as plt
+
+    # Create propagation object
+    rnd = np.random.RandomState()
+    propag = PropagationImtP1411(rnd)
+
+    # Input parameters
+    dist = np.linspace(0.1, 100, num=500)
+    freq = 40e6*np.ones_like(dist)
+
+    # No shadowing
+    shad = False
+    # Calculate loss
+    loss = propag.get_loss(distance_3D=dist, frequency=freq, shadow=shad)
+
+    # Plot with shadowing loss
+    plt.plot(dist, loss, linewidth=1.0)
+    plt.xlabel('Distance [m]')
+    plt.ylabel('Loss [dB]')
+    plt.title('No shadow loss')
+    plt.grid()
+    plt.xlim((0, 100))
+    plt.ylim((np.min(loss), np.max(loss)))
+    plt.show()
+
+    # With shadowing
+    shad = True
+    # Calculate loss
+    loss = propag.get_loss(distance_3D=dist, frequency=freq, shadow=shad)
+
+    # Plot with shadowing loss
+    plt.plot(dist, loss, linewidth=1.0)
+    plt.xlabel('Distance [m]')
+    plt.ylabel('Loss [dB]')
+    plt.title('With shadow loss')
+    plt.grid()
+    plt.xlim((0, 100))
+    plt.ylim((np.min(loss), np.max(loss)))
+    plt.show()
