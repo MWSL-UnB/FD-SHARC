@@ -6,7 +6,7 @@ import numpy as np
 class PropagationImtP1411(Propagation):
     """
     Implements the propagation model described in ITU-R P.1411-9, section 4.1
-    This class is supposed to be used for UE-UE propagation
+    This class is supposed to be used for BS-BS and UE-UE propagation
 
     Frequency in MHz and distance in meters!
     """
