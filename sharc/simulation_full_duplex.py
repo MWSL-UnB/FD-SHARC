@@ -38,6 +38,10 @@ class SimulationFullDuplex(Simulation):
 
         self.propagation_imt = PropagationFactory.create_propagation(self.parameters.imt.channel_model, self.parameters,
                                                                      random_number_gen)
+        self.propagation_imt_bs_bs = PropagationFactory.create_propagation(self.parameters.imt.bs_bs_channel_model,
+                                                                           self.parameters, random_number_gen)
+        self.propagation_imt_ue_ue = PropagationFactory.create_propagation(self.parameters.imt.ue_ue_channel_model,
+                                                                           self.parameters, random_number_gen)
         self.propagation_system = PropagationFactory.create_propagation(self.param_system.channel_model,
                                                                         self.parameters,
                                                                         random_number_gen)
@@ -76,12 +80,12 @@ class SimulationFullDuplex(Simulation):
         # UE to UE coupling loss
         self.coupling_loss_imt_ue_ue = self.calculate_coupling_loss(self.ue,
                                                                     self.ue,
-                                                                    self.propagation_imt)
+                                                                    self.propagation_imt_ue_ue)
 
         # BS to BS coupling loss
         self.coupling_loss_imt_bs_bs = self.calculate_coupling_loss(self.bs,
                                                                     self.bs,
-                                                                    self.propagation_imt)
+                                                                    self.propagation_imt_bs_bs)
 
         # Scheduler which divides the band equally among BSs and UEs
         self.scheduler()

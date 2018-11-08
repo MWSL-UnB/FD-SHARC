@@ -21,6 +21,7 @@ from sharc.propagation.propagation_clear_air_452 import PropagationClearAir
 from sharc.propagation.propagation_tvro import PropagationTvro
 from sharc.propagation.propagation_indoor import PropagationIndoor
 from sharc.propagation.propagation_hdfss import PropagationHDFSS
+from sharc.propagation.propagation_imt_p1411 import PropagationImtP1411
 
 class PropagationFactory(object):
 
@@ -50,6 +51,8 @@ class PropagationFactory(object):
             return PropagationHDFSS(random_number_gen)
         elif channel_model == "INDOOR":
             return PropagationIndoor(random_number_gen, param.indoor)
+        elif channel_model == "IMT_P1411":
+            return PropagationImtP1411(random_number_gen)
         else:
             sys.stderr.write("ERROR\nInvalid channel_model: " + channel_model)
             sys.exit(1)
