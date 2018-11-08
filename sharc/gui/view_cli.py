@@ -20,7 +20,6 @@ class ViewCli(Observer):
     def __init__(self, parent=None):
         super().__init__()
         self.parent = parent
-
         
     def initialize(self, param_file, out_dir):
         self.controller.action(action = Action.START_SIMULATION_SINGLE_THREAD, 
@@ -67,4 +66,3 @@ class ViewCli(Observer):
         """
         logger = logging.getLogger(source)
         logger.info(text)
-        

@@ -8,6 +8,7 @@ Created on Tue Sep 12 17:21:06 2017
 from itertools import compress
 import numpy as np
 import math
+from warnings import filterwarnings
 
 from sharc.simulation import Simulation
 from sharc.parameters.parameters import Parameters
@@ -29,6 +30,8 @@ class SimulationFullDuplex(Simulation):
         self.system_ul_inr = np.empty(0)
         self.system_dl_inr = np.empty(0)
 
+        filterwarnings("ignore", "invalid value encountered in", RuntimeWarning)
+
     def snapshot(self, *args, **kwargs):
         write_to_file = kwargs["write_to_file"]
         snapshot_number = kwargs["snapshot_number"]
@@ -38,6 +41,10 @@ class SimulationFullDuplex(Simulation):
 
         self.propagation_imt = PropagationFactory.create_propagation(self.parameters.imt.channel_model, self.parameters,
                                                                      random_number_gen)
+        self.propagation_imt_bs_bs = PropagationFactory.create_propagation(self.parameters.imt.bs_bs_channel_model,
+                                                                           self.parameters, random_number_gen)
+        self.propagation_imt_ue_ue = PropagationFactory.create_propagation(self.parameters.imt.ue_ue_channel_model,
+                                                                           self.parameters, random_number_gen)
         self.propagation_system = PropagationFactory.create_propagation(self.param_system.channel_model,
                                                                         self.parameters,
                                                                         random_number_gen)
@@ -76,12 +83,12 @@ class SimulationFullDuplex(Simulation):
         # UE to UE coupling loss
         self.coupling_loss_imt_ue_ue = self.calculate_coupling_loss(self.ue,
                                                                     self.ue,
-                                                                    self.propagation_imt)
+                                                                    self.propagation_imt_ue_ue)
 
         # BS to BS coupling loss
         self.coupling_loss_imt_bs_bs = self.calculate_coupling_loss(self.bs,
                                                                     self.bs,
-                                                                    self.propagation_imt)
+                                                                    self.propagation_imt_bs_bs)
 
         # Scheduler which divides the band equally among BSs and UEs
         self.scheduler()
