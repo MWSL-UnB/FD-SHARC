@@ -8,6 +8,7 @@ Created on Tue Sep 12 17:21:06 2017
 from itertools import compress
 import numpy as np
 import math
+from warnings import filterwarnings
 
 from sharc.simulation import Simulation
 from sharc.parameters.parameters import Parameters
@@ -28,6 +29,8 @@ class SimulationFullDuplex(Simulation):
         self.coupling_loss_imt_ue_system = np.empty(0)
         self.system_ul_inr = np.empty(0)
         self.system_dl_inr = np.empty(0)
+
+        filterwarnings("ignore", "invalid value encountered in", RuntimeWarning)
 
     def snapshot(self, *args, **kwargs):
         write_to_file = kwargs["write_to_file"]

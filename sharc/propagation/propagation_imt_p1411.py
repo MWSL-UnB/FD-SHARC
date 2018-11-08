@@ -1,6 +1,7 @@
 from sharc.propagation.propagation import Propagation
 
 import numpy as np
+from warnings import filterwarnings, catch_warnings
 
 
 class PropagationImtP1411(Propagation):
@@ -103,7 +104,10 @@ class PropagationImtP1411(Propagation):
         else:
             shadow_loss = 0.0
 
-        loss = 10 * alpha * np.log10(d) + 10 * gamma * np.log10(f) + beta + shadow_loss
+        with catch_warnings(record=False) as w:
+            filterwarnings("ignore", "divide by zero encountered in log10", RuntimeWarning)
+            loss = 10 * alpha * np.log10(d) + 10 * gamma * np.log10(f) + beta + shadow_loss
+
         return loss
 
     def get_loss_range(self, d: np.array):
