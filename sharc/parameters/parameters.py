@@ -109,6 +109,8 @@ class Parameters(object):
         self.imt.dl_sinr_min             = config.getfloat("IMT", "dl_sinr_min")
         self.imt.dl_sinr_max             = config.getfloat("IMT", "dl_sinr_max")
         self.imt.channel_model           = config.get("IMT", "channel_model")
+        self.imt.ue_ue_channel_model = config.get("IMT", "ue_ue_channel_model")
+        self.imt.bs_bs_channel_model = config.get("IMT", "bs_bs_channel_model")
         self.imt.line_of_sight_prob      = config.getfloat("IMT", "line_of_sight_prob")
         self.imt.shadowing               = config.getboolean("IMT", "shadowing")
         self.imt.noise_temperature       = config.getfloat("IMT", "noise_temperature")
