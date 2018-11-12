@@ -268,13 +268,14 @@ class AntennaBeamformingImt(Antenna):
         phi_rad = np.ravel(np.array([np.deg2rad(phi)]))
         theta_rad = np.ravel(np.array([np.deg2rad(theta)]))
 
-        points = np.matrix([np.sin(theta_rad)*np.cos(phi_rad),
+        points = np.array([np.sin(theta_rad)*np.cos(phi_rad),
                            np.sin(theta_rad)*np.sin(phi_rad),
                            np.cos(theta_rad)])
+        points = np.ndarray(shape=(3, np.size(points,axis=1)), dtype=float, buffer=points)
 
-        rotated_points = self.rotation_mtx*points
+        rotated_points = self.rotation_mtx@points
 
-        lo_phi = np.ravel(np.asarray(np.rad2deg(np.arctan2(rotated_points[1],rotated_points[0]))))
+        lo_phi = np.ravel(np.asarray(np.rad2deg(np.arctan2(rotated_points[1], rotated_points[0]))))
         lo_theta = np.ravel(np.asarray(np.rad2deg(np.arccos(rotated_points[2]))))
 
         return lo_phi, lo_theta
@@ -284,13 +285,15 @@ class AntennaBeamformingImt(Antenna):
         alpha = np.deg2rad(self.azimuth)
         beta = np.deg2rad(self.elevation)
 
-        Ry = np.matrix([[ np.cos(beta), 0.0, np.sin(beta)],
-                        [          0.0, 1.0,       0.0],
-                        [-np.sin(beta), 0.0, np.cos(beta)]])
-        Rz = np.matrix([[np.cos(alpha),-np.sin(alpha), 0.0],
-                        [np.sin(alpha), np.cos(alpha), 0.0],
-                        [          0.0,           0.0, 1.0]])
-        self.rotation_mtx = Ry*np.transpose(Rz)
+        Ry = np.array([[ np.cos(beta), 0.0, np.sin(beta)],
+                       [          0.0, 1.0,       0.0],
+                       [-np.sin(beta), 0.0, np.cos(beta)]])
+        Ry = np.ndarray(shape=(3, 3), dtype=float, buffer=Ry)
+        Rz = np.array([[np.cos(alpha),-np.sin(alpha), 0.0],
+                       [np.sin(alpha), np.cos(alpha), 0.0],
+                       [          0.0,           0.0, 1.0]])
+        Rz = np.ndarray(shape=(3, 3), dtype=float, buffer=Rz)
+        self.rotation_mtx = Ry@np.transpose(Rz)
 
 ###############################################################################
 class PlotAntennaPattern(object):

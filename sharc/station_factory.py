@@ -86,6 +86,8 @@ class StationFactory(object):
             imt_base_stations.antenna = [AntennaSectorF1336(par,
                               imt_base_stations.elevation[i], 0.0,
                               imt_base_stations.azimuth[i]) for i in range(num_bs)]
+        elif param_ant.bs_antenna_type == "OMNI":
+            imt_base_stations.antenna = [AntennaOmni(par.element_max_g) for i in range(num_bs)]
         else:
             sys.stderr.write("ERROR\nInvalid BS antenna type: " 
                              + param_ant.bs_antenna_type)

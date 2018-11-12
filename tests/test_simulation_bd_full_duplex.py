@@ -273,7 +273,7 @@ class SimulationBDFullDuplexTest(unittest.TestCase):
         # there is no power control, so BSs and UEs will transmit at maximum 
         # power
         self.simulation.power_control()
-        p_tx = 10 + 0 - 3 - 10*math.log10(2)
+        p_tx = 10 + 0 - 10*math.log10(2)
         npt.assert_allclose(self.simulation.bs.tx_power[0], np.array([p_tx, p_tx]), atol=1e-2)
         npt.assert_allclose(self.simulation.ue.tx_power, 20*np.ones(4))
         
@@ -287,7 +287,7 @@ class SimulationBDFullDuplexTest(unittest.TestCase):
         
         # check UE received interference
         npt.assert_allclose(self.simulation.ue.rx_interference,
-                            np.array([-50.53, -49.45, -50.51, -49.44]),
+                            np.array([-53.53, -52.45, -53.48, -52.44]),
                             atol=1e-2)
 
         # check UE thermal noise
@@ -307,7 +307,7 @@ class SimulationBDFullDuplexTest(unittest.TestCase):
         
         # check UE thermal noise + interference + self interference
         npt.assert_allclose(self.simulation.ue.total_interference, 
-                            np.array([-50.53, -49.45, -50.51, -49.44]),
+                            np.array([-53.52, -52.44, -53.48, -52.42]),
                             atol=1e-2)
         
         # check SNR 
@@ -317,7 +317,7 @@ class SimulationBDFullDuplexTest(unittest.TestCase):
         
         # check SINR
         npt.assert_allclose(self.simulation.ue.sinr, 
-                            np.array([-70.48 - (-50.53), -80.36 - (-49.45), -70.54 - (-50.51), -60.00 - (-49.44)]),
+                            np.array([-70.48 - (-53.52), -80.36 - (-52.44), -70.54 - (-53.48), -60.00 - (-52.42)]),
                             atol=5e-2)
         
         # check BS received power
@@ -346,15 +346,15 @@ class SimulationBDFullDuplexTest(unittest.TestCase):
                             np.array([-60.27, -63.05]),
                             atol=1e-2)
         npt.assert_allclose(self.simulation.bs.total_interference[1], 
-                            np.array([-75.36, -71.64]),
+                            np.array([-75.29, -71.62]),
                             atol=5e-2)  
         
         # check self-interference
         npt.assert_allclose(self.simulation.bs.self_interference[0], 
-                            np.array([-96.01, -96.01]),
+                            np.array([-93.01, -93.01]),
                             atol=1e-2)
         npt.assert_allclose(self.simulation.bs.self_interference[1], 
-                            np.array([-96.01, -96.01]),
+                            np.array([-93.01, -93.01]),
                             atol=1e-2)
         
         # check SNR 
@@ -370,7 +370,7 @@ class SimulationBDFullDuplexTest(unittest.TestCase):
                             np.array([ 2.80, -4.30]),
                             atol=1e-2)
         npt.assert_allclose(self.simulation.bs.sinr[1], 
-                            np.array([17.79, 24.63]),
+                            np.array([17.75, 24.62]),
                             atol=1e-2)
         
         # Create system
@@ -516,7 +516,7 @@ class SimulationBDFullDuplexTest(unittest.TestCase):
         # there is no power control, so BSs and UEs will transmit at maximum 
         # power
         self.simulation.power_control()
-        p_tx = 10 + 0 - 3 - 10*math.log10(2)
+        p_tx = 10 + 0 - 10*math.log10(2)
         npt.assert_allclose(self.simulation.bs.tx_power[0], np.array([p_tx, p_tx]), atol=1e-2)
         npt.assert_allclose(self.simulation.ue.tx_power, 20*np.ones(4))
         
@@ -530,7 +530,7 @@ class SimulationBDFullDuplexTest(unittest.TestCase):
         
         # check UE received interference
         npt.assert_allclose(self.simulation.ue.rx_interference,
-                            np.array([-53.97, -84.74, -42.48, -76.07]),
+                            np.array([-56.97, -84.74, -45.48, -76.07]),
                             atol=1e-2)
 
         # check UE thermal noise
@@ -550,7 +550,7 @@ class SimulationBDFullDuplexTest(unittest.TestCase):
         
         # check UE thermal noise + interference + self interference
         npt.assert_allclose(self.simulation.ue.total_interference, 
-                            np.array([-53.97, -78.30, -42.49, -74.42]),
+                            np.array([-56.97, -78.30, -45.49, -74.42]),
                             atol=1e-2)
         
         # check SNR 
@@ -560,7 +560,7 @@ class SimulationBDFullDuplexTest(unittest.TestCase):
         
         # check SINR
         npt.assert_allclose(self.simulation.ue.sinr, 
-                            np.array([-70.48 - (-53.97), -80.36 - (-78.30), -70.54 - (-42.49), -60.00 - (-74.42)]),
+                            np.array([-70.48 - (-56.97), -80.36 - (-78.30), -70.54 - (-45.49), -60.00 - (-74.42)]),
                             atol=5e-2)
         
         # check BS received power
@@ -586,18 +586,18 @@ class SimulationBDFullDuplexTest(unittest.TestCase):
         
         # check BS thermal noise + interference + SI
         npt.assert_allclose(self.simulation.bs.total_interference[0], 
-                            np.array([-88.21]),
+                            np.array([-87.55]),
                             atol=1e-2)
         npt.assert_allclose(self.simulation.bs.total_interference[1], 
-                            np.array([-88.21]),
+                            np.array([-87.55]),
                             atol=5e-2)  
         
         # check self-interference
         npt.assert_allclose(self.simulation.bs.self_interference[0], 
-                            np.array([-np.inf, -96.01]),
+                            np.array([-np.inf, -93.01]),
                             atol=1e-2)
         npt.assert_allclose(self.simulation.bs.self_interference[1], 
-                            np.array([ -96.01, -np.inf]),
+                            np.array([ -93.01, -np.inf]),
                             atol=1e-2)
         
         # check SNR 
@@ -610,10 +610,10 @@ class SimulationBDFullDuplexTest(unittest.TestCase):
         
         # check SINR
         npt.assert_allclose(self.simulation.bs.sinr[0], 
-                            np.array([20.85]),
+                            np.array([20.19]),
                             atol=1e-2)
         npt.assert_allclose(self.simulation.bs.sinr[1], 
-                            np.array([41.22]),
+                            np.array([40.55]),
                             atol=1e-2)
         
         # Create system

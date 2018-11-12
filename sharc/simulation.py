@@ -117,6 +117,8 @@ class Simulation(ABC, Observable):
             self.adjacent_channel = False
 
         self.propagation_imt = None
+        self.propagation_imt_bs_bs = None
+        self.propagation_imt_ue_ue = None
         self.propagation_system = None
 
     def add_observer_list(self, observers: list):
