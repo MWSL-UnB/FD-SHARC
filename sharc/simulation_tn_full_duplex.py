@@ -30,7 +30,13 @@ class SimulationTNFullDuplex(Simulation):
         self.coupling_loss_imt_ue_system = np.empty(0)
         self.system_ul_inr = np.empty(0)
         self.system_dl_inr = np.empty(0)
+        self.bs_to_ue_beam_idx = np.empty(0)
 
+    def initialize(self, *args, **kwargs):
+        super().initialize(*args,**kwargs)
+        num_bs = self.topology.num_base_stations
+        num_ue = num_bs * self.parameters.imt.ue_k * self.parameters.imt.ue_k_m
+        self.bs_to_ue_beam_idx = -1.0 * np.ones(num_ue, dtype=int)
         
     def snapshot(self, *args, **kwargs):
         write_to_file = kwargs["write_to_file"]
@@ -40,9 +46,9 @@ class SimulationTNFullDuplex(Simulation):
         random_number_gen = np.random.RandomState(seed)
 
         self.propagation_imt = PropagationFactory.create_propagation(self.parameters.imt.channel_model, self.parameters,
-                                                                    random_number_gen)
+                                                                     random_number_gen)
         self.propagation_system = PropagationFactory.create_propagation(self.param_system.channel_model, self.parameters,
-                                                                       random_number_gen)
+                                                                        random_number_gen)
         
         # In case of hotspots, base stations coordinates have to be calculated
         # on every snapshot. Anyway, let topology decide whether to calculate
@@ -78,12 +84,12 @@ class SimulationTNFullDuplex(Simulation):
         # UE to UE coupling loss
         self.coupling_loss_imt_ue_ue = self.calculate_imt_coupling_loss(self.ue,
                                                                         self.ue,
-                                                                        self.propagation_imt)
+                                                                        self.propagation_imt_ue_ue)
         
         # BS to BS coupling loss
         self.coupling_loss_imt_bs_bs = self.calculate_imt_coupling_loss(self.bs,
                                                                         self.bs,
-                                                                        self.propagation_imt)
+                                                                        self.propagation_imt_bs_bs)
         
         
         # Scheduler which divides the band equally among BSs and UEs
@@ -128,14 +134,20 @@ class SimulationTNFullDuplex(Simulation):
             self.link_dl[bs] = self.link[bs][:K]
             
             # select up to K UL UEs
-            self.link_ul[bs] = np.repeat(np.nan,len(self.link_dl[bs]))
+            self.link_ul[bs] = np.repeat(-1, len(self.link_dl[bs]))
             ul_ues = random_number_gen.rand(len(self.link[bs][K:])) < self.parameters.imt.ul_load_imbalance
-            self.link_ul[bs][ul_ues] = np.array(self.link[bs][K:],dtype=int)[ul_ues]
+            self.link_ul[bs][ul_ues] = np.array(self.link[bs][K:], dtype=int)[ul_ues]
             
             # delete UEs that are not active
-            num_ul_ues = np.count_nonzero(~np.isnan(self.link_ul[bs]))
+            num_ul_ues = np.count_nonzero(self.link_ul[bs] != -1)
             num_ues = (len(self.link_dl[bs]) + num_ul_ues)
             del self.link[bs][num_ues:]
+
+            # define UE RB group
+            for k, ue in enumerate(self.link_dl[bs]):
+                self.bs_to_ue_beam_rbs[ue] = k
+            for k, ue in enumerate(self.link_ul[bs]):
+                self.bs_to_ue_beam_rbs[ue] = k if ue != -1 else -1
             
             # Activate the selected UE's and create beams
             self.ue.active[self.link[bs]] = np.ones(K, dtype=bool)
@@ -146,14 +158,14 @@ class SimulationTNFullDuplex(Simulation):
                 # add beam to UE antennas
                 self.ue.antenna[ue].add_beam(self.bs_to_ue_phi[bs,ue] - 180,
                                              180 - self.bs_to_ue_theta[bs,ue])
-                # set beam resource block group
-                self.bs_to_ue_beam_rbs[ue] = len(self.bs.antenna[bs].beams_list) - 1
+                # set beam indexes
+                self.bs_to_ue_beam_idx[ue] = len(self.bs.antenna[bs].beams_list) - 1
                 
         
     def calculate_imt_gains(self,
-                        station_1: StationManager,
-                        station_2: StationManager,
-                        c_channel = True) -> np.array:
+                            station_1: StationManager,
+                            station_2: StationManager,
+                            c_channel = True) -> np.array:
         """
         Calculates the gains of antennas in station_1 in the direction of
         station_2
@@ -168,7 +180,7 @@ class SimulationTNFullDuplex(Simulation):
                 phi = self.bs_to_ue_phi
                 theta = self.bs_to_ue_theta
                 idx_range = 1
-                beams_idx = self.bs_to_ue_beam_rbs
+                beams_idx = self.bs_to_ue_beam_idx
             elif(station_2.station_type is StationType.IMT_BS):
                 if self.wrap_around_enabled:
                     d_2D, d_3D, phi, theta = station_1.get_dist_angles_wrap_around(station_2)
@@ -244,11 +256,13 @@ class SimulationTNFullDuplex(Simulation):
             gain_b = np.zeros_like(all_gains)
 
             # loop in the current BS
-            for k in range(gain_b.shape[0]):
+            for k in range(station_b.num_stations):
                 # loop in the other BS
-                for m in range(gain_b.shape[1]):
-                    beam = k
-                    gain_b[k,m] = all_gains[m,beam]
+                for m in range(station_a.num_stations):
+                    station_b_beams = m*self.parameters.imt.ue_k*self.parameters.imt.ue_k_m
+                    # TODO fix station_a_beams!
+                    station_a_beams = station_b_beams
+                    gain_b[k,station_b_beams] = all_gains[m, station_a_beams]
         else:
             gain_a = self.calculate_imt_gains(station_a, station_b)
             gain_b = np.transpose(self.calculate_imt_gains(station_b, station_a))
@@ -279,7 +293,7 @@ class SimulationTNFullDuplex(Simulation):
         # Currently, the maximum transmit power of the base station is equaly
         # divided among the selected UEs
         tx_power = self.parameters.imt.bs_conducted_power + self.bs_power_gain \
-                    - self.parameters.imt.bs_ohmic_loss - 10*math.log10(self.parameters.imt.ue_k) 
+                   - 10 * math.log10(self.parameters.imt.ue_k)
         # calculate tansmit powers to have a structure such as
         # {bs_1: [pwr_1, pwr_2,...], ...}, where bs_1 is the base station id,
         # pwr_1 is the transmit power from bs_1 to ue_1, pwr_2 is the transmit
@@ -313,8 +327,11 @@ class SimulationTNFullDuplex(Simulation):
         bs_active = np.where(self.bs.active)[0]
         for bs in bs_active:
             ue = self.link_dl[bs]
-            self.ue.rx_power[ue] = self.bs.tx_power[bs] - self.coupling_loss_imt[bs,ue] \
-                                     - self.parameters.imt.ue_body_loss - self.parameters.imt.ue_ohmic_loss
+
+            self.ue.rx_power[ue] = self.bs.tx_power[bs] - self.parameters.imt.bs_ohmic_loss \
+                                   - self.coupling_loss_imt[bs, ue] \
+                                   - self.parameters.imt.ue_body_loss \
+                                   - self.parameters.imt.ue_ohmic_loss
 
             # create a list with base stations that generate interference in ue_list
             bs_interf = [b for b in bs_active if b not in [bs]]
