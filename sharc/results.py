@@ -70,6 +70,9 @@ class Results(object):
         self.imt_dl_ue_interf = list()
         self.imt_ul_bs_interf = list()
 
+        self.imt_dl_ue_self_interf = list()
+        self.imt_ul_bs_self_interf = list()
+
         self.system_inr = list()
         self.system_inr_scaled = list()
         self.output_directory = out_dir
@@ -84,4 +87,3 @@ class Results(object):
     def write_files(self, snapshot_number: int):
         pass
 
-      

@@ -324,6 +324,22 @@ class ResultsSamples(Results):
             y_label = "Interference [dB]"
             file_name = title
             self.plot_list.append(Plot(x, y, x_label, y_label, title, file_name))
+        if len(self.imt_dl_ue_self_interf) > 0:
+            x = np.arange(len(self.imt_dl_ue_self_interf))
+            y = np.array(self.imt_dl_ue_self_interf)
+            title = "[IMT] Samples of UE Self-Interference"
+            x_label = "Number of samples"
+            y_label = "Interference [dB]"
+            file_name = title
+            self.plot_list.append(Plot(x, y, x_label, y_label, title, file_name))
+        if len(self.imt_ul_bs_self_interf) > 0:
+            x = np.arange(len(self.imt_ul_bs_self_interf))
+            y = np.array(self.imt_ul_bs_self_interf)
+            title = "[IMT] Samples of BS Self-Interference"
+            x_label = "Number of samples"
+            y_label = "Interference [dB]"
+            file_name = title
+            self.plot_list.append(Plot(x, y, x_label, y_label, title, file_name))
         if len(self.imt_dl_snr) > 0:
             x = np.arange(len(self.imt_dl_snr))
             y = np.array(self.imt_dl_snr)
@@ -489,4 +505,3 @@ class ResultsSamples(Results):
         
         self.plot_list = list()
 
-      

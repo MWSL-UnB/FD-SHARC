@@ -482,12 +482,14 @@ class SimulationFullDuplex(Simulation):
             self.results.imt_dl_sinr.extend(self.ue.sinr[ue].tolist())
             self.results.imt_dl_snr.extend(self.ue.snr[ue].tolist())
             self.results.imt_dl_ue_interf.extend(self.ue.total_interference[ue].tolist())
+            self.results.imt_dl_ue_self_interf.extend(self.ue.self_interference[ue].tolist())
 
             self.results.imt_ul_tx_power.extend(self.ue.tx_power[ue_ul].tolist())
             self.results.imt_ul_rx_power.extend(self.bs.rx_power[bs].tolist())
             self.results.imt_ul_sinr.extend(self.bs.sinr[bs].tolist())
             self.results.imt_ul_snr.extend(self.bs.snr[bs].tolist())
             self.results.imt_ul_bs_interf.extend(self.bs.total_interference[bs].tolist())
+            self.results.imt_ul_bs_self_interf.extend(self.bs.self_interference[bs].tolist())
 
         self.results.imt_total_tput.extend([total_ue_tput + total_bs_tput])
         self.results.imt_dl_total_tput.extend([total_ue_tput])
