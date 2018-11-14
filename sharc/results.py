@@ -67,11 +67,17 @@ class Results(object):
         
         self.imt_dl_rx_power = list()
         self.imt_ul_rx_power = list()
-        self.imt_dl_ue_interf = list()
-        self.imt_ul_bs_interf = list()
+        self.imt_dl_ue_total_interf = list()
+        self.imt_ul_bs_total_interf = list()
 
         self.imt_dl_ue_self_interf = list()
         self.imt_ul_bs_self_interf = list()
+        self.imt_ue_interf_from_ue = list()
+        self.imt_ue_interf_from_bs = list()
+        self.imt_bs_interf_from_ue = list()
+        self.imt_bs_interf_from_bs = list()
+        self.imt_ue_thermal_noise = list()
+        self.imt_bs_thermal_noise = list()
 
         self.system_inr = list()
         self.system_inr_scaled = list()

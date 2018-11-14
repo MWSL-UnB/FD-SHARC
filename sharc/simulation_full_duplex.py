@@ -186,6 +186,9 @@ class SimulationFullDuplex(Simulation):
                                   - self.parameters.imt.ue_body_loss \
                                   - self.parameters.imt.ue_ohmic_loss
 
+                self.ue.interference_from_bs[ue] = 10 * np.log10(np.power(10, 0.1 * self.ue.interference_from_bs[ue]) +
+                                                                 np.power(10, 0.1 * interference_bs))
+
                 # Interference from UEs
                 interference_ue = -np.inf * np.ones_like(self.link_dl[bi])
                 ue_interf = self.link_ul[bi]
@@ -195,6 +198,9 @@ class SimulationFullDuplex(Simulation):
                                               - self.coupling_loss_imt_ue_ue[ue_interf, interfered_ue] \
                                               - 2 * self.parameters.imt.ue_body_loss \
                                               - 2 * self.parameters.imt.ue_ohmic_loss
+
+                self.ue.interference_from_ue[ue] = 10 * np.log10(np.power(10, 0.1 * self.ue.interference_from_ue[ue]) +
+                                                                 np.power(10, 0.1 * interference_ue))
 
                 self.ue.rx_interference[ue] = 10 * np.log10( \
                     np.power(10, 0.1 * self.ue.rx_interference[ue]) + \
@@ -242,11 +248,19 @@ class SimulationFullDuplex(Simulation):
                                                                     - self.coupling_loss_imt[bs, ui] \
                                                                     - self.parameters.imt.bs_ohmic_loss
 
+                self.bs.interference_from_ue[bs][ue_interfered_idx] = 10 * np.log10(
+                    np.power(10, 0.1 * self.bs.interference_from_ue[bs][ue_interfered_idx])
+                    + np.power(10, 0.1 * interference_ue))
+
                 bint = list(compress(np.arange(bi * self.parameters.imt.ue_k,
                                                (bi + 1) * self.parameters.imt.ue_k), ue_interfered_idx))
                 interference_bs = self.bs.tx_power[bi][ue_interfered_idx] \
                                   - 2 * self.parameters.imt.bs_ohmic_loss \
                                   - self.coupling_loss_imt_bs_bs[bs, bint]
+
+                self.bs.interference_from_bs[bs][ue_interfered_idx] = 10 * np.log10(
+                    np.power(10, 0.1 * self.bs.interference_from_bs[bs][ue_interfered_idx])
+                    + np.power(10, 0.1 * interference_bs))
 
                 self.bs.rx_interference[bs][ue_interfered_idx] = 10 * np.log10( \
                     np.power(10, 0.1 * self.bs.rx_interference[bs][ue_interfered_idx])
@@ -481,15 +495,21 @@ class SimulationFullDuplex(Simulation):
             self.results.imt_dl_rx_power.extend(self.ue.rx_power[ue].tolist())
             self.results.imt_dl_sinr.extend(self.ue.sinr[ue].tolist())
             self.results.imt_dl_snr.extend(self.ue.snr[ue].tolist())
-            self.results.imt_dl_ue_interf.extend(self.ue.total_interference[ue].tolist())
+            self.results.imt_dl_ue_total_interf.extend(self.ue.total_interference[ue].tolist())
             self.results.imt_dl_ue_self_interf.extend(self.ue.self_interference[ue].tolist())
+            self.results.imt_ue_interf_from_ue.extend(self.ue.interference_from_ue[ue].tolist())
+            self.results.imt_ue_interf_from_bs.extend(self.ue.interference_from_bs[ue].tolist())
+            self.results.imt_ue_thermal_noise.extend(self.ue.thermal_noise[ue].tolist())
 
             self.results.imt_ul_tx_power.extend(self.ue.tx_power[ue_ul].tolist())
             self.results.imt_ul_rx_power.extend(self.bs.rx_power[bs].tolist())
             self.results.imt_ul_sinr.extend(self.bs.sinr[bs].tolist())
             self.results.imt_ul_snr.extend(self.bs.snr[bs].tolist())
-            self.results.imt_ul_bs_interf.extend(self.bs.total_interference[bs].tolist())
+            self.results.imt_ul_bs_total_interf.extend(self.bs.total_interference[bs].tolist())
             self.results.imt_ul_bs_self_interf.extend(self.bs.self_interference[bs].tolist())
+            self.results.imt_bs_interf_from_ue.extend(self.bs.interference_from_ue[bs].tolist())
+            self.results.imt_bs_interf_from_bs.extend(self.bs.interference_from_bs[bs].tolist())
+            self.results.imt_bs_thermal_noise.extend([self.bs.thermal_noise[bs]])
 
         self.results.imt_total_tput.extend([total_ue_tput + total_bs_tput])
         self.results.imt_dl_total_tput.extend([total_ue_tput])
