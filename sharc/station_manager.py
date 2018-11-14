@@ -34,6 +34,8 @@ class StationManager(object):
         self.rx_power = np.empty(n)
         self.rx_interference = np.empty(n)
         self.self_interference = np.empty(n)
+        self.interference_from_bs = np.empty(n)
+        self.interference_from_ue = np.empty(n)
         self.ext_interference = np.empty(n)
         self.antenna = np.empty(n, dtype=Antenna)
         self.bandwidth = np.empty(n)

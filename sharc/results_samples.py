@@ -148,10 +148,10 @@ class ResultsSamples(Results):
             y_label = "UL SINR [dB]"
             file_name = title
             self.plot_list.append(Plot(x, y, x_label, y_label, title, file_name))
-        if len(self.imt_ul_bs_interf) > 0:
-            x = np.arange(len(self.imt_ul_bs_interf))
-            y = np.array(self.imt_ul_bs_interf)
-            title = "[IMT] Samples of UL Interference"
+        if len(self.imt_ul_bs_total_interf) > 0:
+            x = np.arange(len(self.imt_ul_bs_total_interf))
+            y = np.array(self.imt_ul_bs_total_interf)
+            title = "[IMT] Samples of UL Total Interference"
             x_label = "Number of samples"
             y_label = "UL Interference [dB]"
             file_name = title
@@ -316,10 +316,26 @@ class ResultsSamples(Results):
             y_label = "SINR [dB]"
             file_name = title
             self.plot_list.append(Plot(x, y, x_label, y_label, title, file_name))
-        if len(self.imt_dl_ue_interf) > 0:
-            x = np.arange(len(self.imt_dl_ue_interf))
-            y = np.array(self.imt_dl_ue_interf)
-            title = "[IMT] Samples of DL Interference"
+        if len(self.imt_dl_ue_total_interf) > 0:
+            x = np.arange(len(self.imt_dl_ue_total_interf))
+            y = np.array(self.imt_dl_ue_total_interf)
+            title = "[IMT] Samples of DL Total Interference"
+            x_label = "Number of samples"
+            y_label = "Interference [dB]"
+            file_name = title
+            self.plot_list.append(Plot(x, y, x_label, y_label, title, file_name))
+        if len(self.imt_dl_ue_self_interf) > 0:
+            x = np.arange(len(self.imt_dl_ue_self_interf))
+            y = np.array(self.imt_dl_ue_self_interf)
+            title = "[IMT] Samples of UE Self-Interference"
+            x_label = "Number of samples"
+            y_label = "Interference [dB]"
+            file_name = title
+            self.plot_list.append(Plot(x, y, x_label, y_label, title, file_name))
+        if len(self.imt_ul_bs_self_interf) > 0:
+            x = np.arange(len(self.imt_ul_bs_self_interf))
+            y = np.array(self.imt_ul_bs_self_interf)
+            title = "[IMT] Samples of BS Self-Interference"
             x_label = "Number of samples"
             y_label = "Interference [dB]"
             file_name = title
@@ -387,7 +403,55 @@ class ResultsSamples(Results):
             x_label = "Number of samples"
             y_label = "INR [dB]"
             file_name = title
-            self.plot_list.append(Plot(x, y, x_label, y_label, title, file_name))  
+            self.plot_list.append(Plot(x, y, x_label, y_label, title, file_name))
+        if len(self.imt_ue_interf_from_ue) > 0:
+            x = np.arange(len(self.imt_ue_interf_from_ue))
+            y = np.array(self.imt_ue_interf_from_ue)
+            title = "[IMT] Samples of UE Interference from UEs"
+            x_label = "Number of samples"
+            y_label = "Interference [dB]"
+            file_name = title
+            self.plot_list.append(Plot(x, y, x_label, y_label, title, file_name))
+        if len(self.imt_ue_interf_from_bs) > 0:
+            x = np.arange(len(self.imt_ue_interf_from_bs))
+            y = np.array(self.imt_ue_interf_from_bs)
+            title = "[IMT] Samples of UE Interference from BSs"
+            x_label = "Number of samples"
+            y_label = "Interference [dB]"
+            file_name = title
+            self.plot_list.append(Plot(x, y, x_label, y_label, title, file_name))
+        if len(self.imt_bs_interf_from_ue) > 0:
+            x = np.arange(len(self.imt_bs_interf_from_ue))
+            y = np.array(self.imt_bs_interf_from_ue)
+            title = "[IMT] Samples of BS Interference from UEs"
+            x_label = "Number of samples"
+            y_label = "Interference [dB]"
+            file_name = title
+            self.plot_list.append(Plot(x, y, x_label, y_label, title, file_name))
+        if len(self.imt_bs_interf_from_bs) > 0:
+            x = np.arange(len(self.imt_bs_interf_from_bs))
+            y = np.array(self.imt_bs_interf_from_bs)
+            title = "[IMT] Samples of BS Interference from BSs"
+            x_label = "Number of samples"
+            y_label = "Interference [dB]"
+            file_name = title
+            self.plot_list.append(Plot(x, y, x_label, y_label, title, file_name))
+        if len(self.imt_ue_thermal_noise) > 0:
+            x = np.arange(len(self.imt_ue_thermal_noise))
+            y = np.array(self.imt_ue_thermal_noise)
+            title = "[IMT] Samples of UE thermal noise"
+            x_label = "Number of samples"
+            y_label = "Noise [dBm]"
+            file_name = title
+            self.plot_list.append(Plot(x, y, x_label, y_label, title, file_name))
+        if len(self.imt_ue_thermal_noise) > 0:
+            x = np.arange(len(self.imt_bs_thermal_noise))
+            y = np.array(self.imt_bs_thermal_noise)
+            title = "[IMT] Samples of BS thermal noise"
+            x_label = "Number of samples"
+            y_label = "Noise [dBm]"
+            file_name = title
+            self.plot_list.append(Plot(x, y, x_label, y_label, title, file_name))
                       
             
     def write_files(self, snapshot_number: int):
@@ -489,4 +553,3 @@ class ResultsSamples(Results):
         
         self.plot_list = list()
 
-      
