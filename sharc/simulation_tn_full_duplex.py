@@ -31,13 +31,17 @@ class SimulationTNFullDuplex(Simulation):
         self.system_ul_inr = np.empty(0)
         self.system_dl_inr = np.empty(0)
         self.bs_to_ue_beam_idx = np.empty(0)
+        self.ue_beam_rbs = np.empty(0)
+        self.bs_beam_rbs = dict()
 
     def initialize(self, *args, **kwargs):
         super().initialize(*args,**kwargs)
         num_bs = self.topology.num_base_stations
         num_ue = num_bs * self.parameters.imt.ue_k * self.parameters.imt.ue_k_m
         self.bs_to_ue_beam_idx = -1.0 * np.ones(num_ue, dtype=int)
-        
+        self.ue_beam_rbs = -1.0 * np.ones(num_ue, dtype=int)
+        self.bs_beam_rbs = dict()
+
     def snapshot(self, *args, **kwargs):
         write_to_file = kwargs["write_to_file"]
         snapshot_number = kwargs["snapshot_number"]
@@ -128,6 +132,9 @@ class SimulationTNFullDuplex(Simulation):
             
         bs_active = np.where(self.bs.active)[0]
         for bs in bs_active:
+            # create BS beam RB lists
+            self.bs_beam_rbs[bs] = list()
+
             # select K UE's among the ones that are in DL
             random_number_gen.shuffle(self.link[bs])
             K = self.parameters.imt.ue_k
@@ -145,9 +152,15 @@ class SimulationTNFullDuplex(Simulation):
 
             # define UE RB group
             for k, ue in enumerate(self.link_dl[bs]):
-                self.bs_to_ue_beam_rbs[ue] = k
+                self.ue_beam_rbs[ue] = k
+                self.bs_beam_rbs[bs].append(('DL', k))
             for k, ue in enumerate(self.link_ul[bs]):
-                self.bs_to_ue_beam_rbs[ue] = k if ue != -1 else -1
+                if ue != -1:
+                    self.ue_beam_rbs[ue] = k
+                    self.bs_beam_rbs[bs].append(('UL', k))
+                else:
+                    self.ue_beam_rbs[ue] = -1
+                    self.bs_beam_rbs[bs].append(('', -1))
             
             # Activate the selected UE's and create beams
             self.ue.active[self.link[bs]] = np.ones(K, dtype=bool)
@@ -260,9 +273,9 @@ class SimulationTNFullDuplex(Simulation):
                 # loop in the other BS
                 for m in range(station_a.num_stations):
                     station_b_beams = m*self.parameters.imt.ue_k*self.parameters.imt.ue_k_m
-                    # TODO fix station_a_beams!
-                    station_a_beams = station_b_beams
-                    gain_b[k,station_b_beams] = all_gains[m, station_a_beams]
+
+                    station_a_beams = 1
+                    gain_b[k, station_b_beams] = all_gains[m, station_a_beams]
         else:
             gain_a = self.calculate_imt_gains(station_a, station_b)
             gain_b = np.transpose(self.calculate_imt_gains(station_b, station_a))

@@ -211,8 +211,9 @@ class SimulationTNFullDuplexTest(unittest.TestCase):
         npt.assert_equal(self.simulation.link_ul, {0: [1], 1: [3]})
         npt.assert_equal(self.simulation.ue.active,
                          np.array([True, True, True, True]))
-        npt.assert_equal(self.simulation.bs_to_ue_beam_rbs, np.array([0, 0, 0, 0]))
+        npt.assert_equal(self.simulation.ue_beam_rbs, np.array([0, 0, 0, 0]))
         npt.assert_equal(self.simulation.bs_to_ue_beam_idx, np.array([0, 1, 0, 1]))
+        npt.assert_equal(self.simulation.bs_beam_rbs, {0: [('DL', 0), ('UL', 0)], 1: [('DL', 0), ('UL', 0)]})
 
         # Test gains
         bs_ue_gain = self.simulation.calculate_imt_gains(self.simulation.bs,
@@ -268,9 +269,9 @@ class SimulationTNFullDuplexTest(unittest.TestCase):
                                       [95.97 - 1 - 1, 92.46 - 1 - 1, 88.01 - 1 - 1, np.nan]]),
                             atol=1e-2)
 
-        # self.simulation.coupling_loss_imt_bs_bs = self.simulation.calculate_imt_coupling_loss(self.simulation.bs,
-        #                                                                                       self.simulation.bs,
-        #                                                                                       self.simulation.propagation_imt_bs_bs)
+        self.simulation.coupling_loss_imt_bs_bs = self.simulation.calculate_imt_coupling_loss(self.simulation.bs,
+                                                                                              self.simulation.bs,
+                                                                                              self.simulation.propagation_imt_bs_bs)
         # npt.assert_allclose(self.simulation.coupling_loss_imt_bs_bs,
         #                     np.array([[np.nan, np.nan, 98.47 - 1 - 2, 98.47 - 2 - 1],
         #                               [98.47 - 1 - 2, 98.47 - 2 - 1, np.nan, np.nan]]),
@@ -318,8 +319,9 @@ class SimulationTNFullDuplexTest(unittest.TestCase):
         self.assertEqual(self.simulation.link, {0: [0, 1], 1: [2]})
         npt.assert_equal(self.simulation.ue.active,
                          np.array([True, True, True, False]))
-        npt.assert_equal(self.simulation.bs_to_ue_beam_rbs, np.array([0, 0, 0, -1]))
+        npt.assert_equal(self.simulation.ue_beam_rbs, np.array([0, 0, 0, -1]))
         npt.assert_equal(self.simulation.bs_to_ue_beam_idx, np.array([0, 1, 0, -1]))
+        npt.assert_equal(self.simulation.bs_beam_rbs, {0: [('DL', 0), ('UL', 0)], 1: [('DL', 0), ('', -1)]})
 
         # Test gains
         bs_ue_gain = self.simulation.calculate_imt_gains(self.simulation.bs,
