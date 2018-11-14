@@ -272,10 +272,10 @@ class SimulationTNFullDuplexTest(unittest.TestCase):
         self.simulation.coupling_loss_imt_bs_bs = self.simulation.calculate_imt_coupling_loss(self.simulation.bs,
                                                                                               self.simulation.bs,
                                                                                               self.simulation.propagation_imt_bs_bs)
-        # npt.assert_allclose(self.simulation.coupling_loss_imt_bs_bs,
-        #                     np.array([[np.nan, np.nan, 98.47 - 1 - 2, 98.47 - 2 - 1],
-        #                               [98.47 - 1 - 2, 98.47 - 2 - 1, np.nan, np.nan]]),
-        #                     atol=1e-2)
+        npt.assert_allclose(self.simulation.coupling_loss_imt_bs_bs,
+                            np.array([[np.nan, np.nan, 98.47 - 1 - 2, 98.47 - 2 - 1],
+                                      [98.47 - 1 - 2, 98.47 - 2 - 1, np.nan, np.nan]]),
+                            atol=1e-2)
 
     def test_simulation_2bs_4ue_fss_ss_imbalance(self):
         self.param.imt.dl_load_imbalance = 2.0
@@ -347,6 +347,45 @@ class SimulationTNFullDuplexTest(unittest.TestCase):
                                                          self.simulation.bs)
         npt.assert_equal(bs_bs_gain, np.array([[1, 2, 1, 2],
                                                [1, 0, 1, 0]]))
+
+        # Create propagation
+        self.simulation.propagation_imt = PropagationFactory.create_propagation(self.param.imt.channel_model,
+                                                                                self.param, random_number_gen)
+        self.simulation.propagation_imt_bs_bs = PropagationFactory.create_propagation(
+            self.param.imt.bs_bs_channel_model,
+            self.param, random_number_gen)
+        self.simulation.propagation_imt_ue_ue = PropagationFactory.create_propagation(
+            self.param.imt.ue_ue_channel_model,
+            self.param, random_number_gen)
+        self.simulation.propagation_system = PropagationFactory.create_propagation(self.param.fss_ss.channel_model,
+                                                                                   self.param, random_number_gen)
+
+        # test coupling loss method
+        self.simulation.coupling_loss_imt = self.simulation.calculate_imt_coupling_loss(self.simulation.bs,
+                                                                                        self.simulation.ue,
+                                                                                        self.simulation.propagation_imt)
+        npt.assert_allclose(self.simulation.coupling_loss_imt,
+                            np.array([[78.47 - 1 - 1, 89.35 - 2 - 1, 93.27 - 1 - 1, 97.05 - 0 - 0],
+                                      [97.55 - 1 - 1, 94.72 - 0 - 1, 91.53 - 1 - 1, 81.99 - 0 - 0]]),
+                            atol=1e-2)
+
+        self.simulation.coupling_loss_imt_ue_ue = self.simulation.calculate_imt_coupling_loss(self.simulation.ue,
+                                                                                              self.simulation.ue,
+                                                                                              self.simulation.propagation_imt_ue_ue)
+        npt.assert_allclose(self.simulation.coupling_loss_imt_ue_ue,
+                            np.array([[np.nan, 86.43 - 1 - 1, 91.53 - 1 - 1, 95.97 - 0 - 0],
+                                      [86.43 - 1 - 1, np.nan, 84.49 - 1 - 1, 92.46 - 0 - 0],
+                                      [91.53 - 1 - 1, 84.49 - 1 - 1, np.nan, 88.01 - 0 - 0],
+                                      [95.97 - 0 - 0, 92.46 - 0 - 0, 88.01 - 0 - 0, np.nan]]),
+                            atol=1e-2)
+
+        self.simulation.coupling_loss_imt_bs_bs = self.simulation.calculate_imt_coupling_loss(self.simulation.bs,
+                                                                                              self.simulation.bs,
+                                                                                              self.simulation.propagation_imt_bs_bs)
+        npt.assert_allclose(self.simulation.coupling_loss_imt_bs_bs,
+                            np.array([[np.nan, np.nan, 98.47 - 1 - 0, 98.47 - 2 - 1],
+                                      [98.47 - 1 - 2, 98.47 - 0 - 0, np.nan, np.nan]]),
+                            atol=1e-2)
 
 
 if __name__ == '__main__':

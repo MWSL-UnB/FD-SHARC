@@ -269,13 +269,28 @@ class SimulationTNFullDuplex(Simulation):
             gain_b = np.zeros_like(all_gains)
 
             # loop in the current BS
-            for k in range(station_b.num_stations):
+            for k in range(station_a.num_stations):
                 # loop in the other BS
-                for m in range(station_a.num_stations):
-                    station_b_beams = m*self.parameters.imt.ue_k*self.parameters.imt.ue_k_m
+                for m in range(station_b.num_stations):
+                    station_b_beams = [n for n in range(m*self.parameters.imt.ue_k*self.parameters.imt.ue_k_m,
+                                                        (m+1)*self.parameters.imt.ue_k*self.parameters.imt.ue_k_m)]
 
-                    station_a_beams = 1
-                    gain_b[k, station_b_beams] = all_gains[m, station_a_beams]
+                    station_a_gains = list()
+                    # current BS beams
+                    for beam_a in self.bs_beam_rbs[k]:
+                        associated = False
+                        # other BS beams
+                        for b_num, beam_b in enumerate(self.bs_beam_rbs[m]):
+                            # if the beams are associated
+                            if beam_a[1] == beam_b[1] and beam_a[0] != beam_b[0]:
+                                # use its gain
+                                station_a_gains.append(all_gains[m, b_num])
+                                associated = True
+                        # if no beams are associated, use token gain 0.0 instead
+                        if not associated:
+                            station_a_gains.append(0.0)
+
+                    gain_b[k, station_b_beams] = station_a_gains
         else:
             gain_a = self.calculate_imt_gains(station_a, station_b)
             gain_b = np.transpose(self.calculate_imt_gains(station_b, station_a))
