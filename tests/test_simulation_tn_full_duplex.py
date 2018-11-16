@@ -282,6 +282,15 @@ class SimulationTNFullDuplexTest(unittest.TestCase):
         bandwidth_per_ue = math.trunc((1 - 0.1) * 100 / 1)
         npt.assert_allclose(self.simulation.ue.bandwidth, bandwidth_per_ue * np.ones(4), atol=1e-2)
 
+        # test power control
+        # there is no power control, so BSs and UEs will transmit at maximum
+        # power
+        self.simulation.power_control()
+        p_tx = 10 + 0 - 10 * math.log10(1)
+        npt.assert_allclose(self.simulation.bs.tx_power[0], np.array([p_tx]), atol=1e-2)
+        npt.assert_allclose(self.simulation.bs.tx_power[1], np.array([p_tx]), atol=1e-2)
+        npt.assert_allclose(self.simulation.ue.tx_power, 20 * np.ones(4))
+
     def test_simulation_2bs_4ue_fss_ss_imbalance(self):
         self.param.imt.dl_load_imbalance = 2.0
         self.param.imt.ul_load_imbalance = 1.0 / self.param.imt.dl_load_imbalance
@@ -396,6 +405,15 @@ class SimulationTNFullDuplexTest(unittest.TestCase):
         self.simulation.scheduler()
         bandwidth_per_ue = math.trunc((1 - 0.1) * 100 / 1)
         npt.assert_allclose(self.simulation.ue.bandwidth[0:3], bandwidth_per_ue * np.ones(3), atol=1e-2)
+
+        # test power control
+        # there is no power control, so BSs and UEs will transmit at maximum
+        # power
+        self.simulation.power_control()
+        p_tx = 10 + 0 - 10 * math.log10(1)
+        npt.assert_allclose(self.simulation.bs.tx_power[0], np.array([p_tx]), atol=1e-2)
+        npt.assert_allclose(self.simulation.bs.tx_power[1], np.array([p_tx]), atol=1e-2)
+        npt.assert_allclose(self.simulation.ue.tx_power[0:3], 20 * np.ones(3))
 
 
 if __name__ == '__main__':

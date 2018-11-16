@@ -312,7 +312,6 @@ class SimulationTNFullDuplex(Simulation):
 
         return coupling_loss
 
-
     def power_control(self):
         """
         Apply downling and uplink power control algorithm
@@ -327,8 +326,8 @@ class SimulationTNFullDuplex(Simulation):
         # pwr_1 is the transmit power from bs_1 to ue_1, pwr_2 is the transmit
         # power from bs_1 to ue_2, etc
         bs_active = np.where(self.bs.active)[0]
-        self.bs.tx_power = dict([(bs, tx_power*np.ones(self.parameters.imt.ue_k)) for bs in bs_active])
-        
+        self.bs.tx_power = dict([(bs, tx_power * np.ones(self.parameters.imt.ue_k)) for bs in bs_active])
+
         # Uplink power control:
         if self.parameters.imt.ue_tx_power_control == "OFF":
             ue_active = np.where(self.ue.active)[0]
@@ -336,14 +335,14 @@ class SimulationTNFullDuplex(Simulation):
         else:
             bs_active = np.where(self.bs.active)[0]
             for bs in bs_active:
-                ue = self.link[bs]
+                ue = self.link_ul[bs]
                 p_cmax = self.parameters.imt.ue_p_cmax
                 m_pusch = self.num_rb_per_ue
                 p_o_pusch = self.parameters.imt.ue_p_o_pusch
                 alpha = self.parameters.imt.ue_alpha
-                cl = self.coupling_loss_imt[bs,ue] + self.parameters.imt.bs_ohmic_loss \
-                            + self.parameters.imt.ue_ohmic_loss + self.parameters.imt.ue_body_loss
-                self.ue.tx_power[ue] = np.minimum(p_cmax, 10*np.log10(m_pusch) + p_o_pusch + alpha*cl)
+                cl = self.coupling_loss_imt[bs, ue] + self.parameters.imt.bs_ohmic_loss \
+                     + self.parameters.imt.ue_ohmic_loss + self.parameters.imt.ue_body_loss
+                self.ue.tx_power[ue] = np.minimum(p_cmax, 10 * np.log10(m_pusch) + p_o_pusch + alpha * cl)
     
         
     def calculate_sinr(self):
