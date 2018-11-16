@@ -277,6 +277,11 @@ class SimulationTNFullDuplexTest(unittest.TestCase):
                                       [98.47 - 1 - 2, 98.47 - 2 - 1, np.nan, np.nan]]),
                             atol=1e-2)
 
+        # test scheduler and bandwidth allocation
+        self.simulation.scheduler()
+        bandwidth_per_ue = math.trunc((1 - 0.1) * 100 / 1)
+        npt.assert_allclose(self.simulation.ue.bandwidth, bandwidth_per_ue * np.ones(4), atol=1e-2)
+
     def test_simulation_2bs_4ue_fss_ss_imbalance(self):
         self.param.imt.dl_load_imbalance = 2.0
         self.param.imt.ul_load_imbalance = 1.0 / self.param.imt.dl_load_imbalance
@@ -386,6 +391,11 @@ class SimulationTNFullDuplexTest(unittest.TestCase):
                             np.array([[np.nan, np.nan, 98.47 - 1 - 0, 98.47 - 2 - 1],
                                       [98.47 - 1 - 2, 98.47 - 0 - 0, np.nan, np.nan]]),
                             atol=1e-2)
+
+        # test scheduler and bandwidth allocation
+        self.simulation.scheduler()
+        bandwidth_per_ue = math.trunc((1 - 0.1) * 100 / 1)
+        npt.assert_allclose(self.simulation.ue.bandwidth[0:3], bandwidth_per_ue * np.ones(3), atol=1e-2)
 
 
 if __name__ == '__main__':
