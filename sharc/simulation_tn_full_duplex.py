@@ -361,32 +361,40 @@ class SimulationTNFullDuplex(Simulation):
                                    - self.parameters.imt.ue_ohmic_loss
 
             # create a list with base stations that generate interference in ue_list
-            bs_interf = [b for b in bs_active if b not in [bs]]
+            bs_interf = bs_active
 
             #  Internal interference
             for bi in bs_interf:
                 #  Interference from BSs
-                interference_bs = self.bs.tx_power[bi] - self.coupling_loss_imt[bi,ue] \
-                                 - self.parameters.imt.ue_body_loss - self.parameters.imt.ue_ohmic_loss
+                if bi != bs:
+                    interference_bs = self.bs.tx_power[bi] - self.coupling_loss_imt[bi,ue] \
+                                    - self.parameters.imt.ue_body_loss - self.parameters.imt.ue_ohmic_loss
+                else:
+                    interference_bs = -np.inf
                            
                 # Interference from UEs
-                interference_ue = -np.inf*np.ones_like(self.link_dl[bi])
-                ue_interf = self.link_ul[bi]
-                ue_int_idx = [k in ue_interf for k in self.link_dl[bi]]
-                interfered_ue = list(compress(ue,ue_int_idx))
-                interference_ue[ue_int_idx] = self.ue.tx_power[ue_interf] \
-                                              - self.coupling_loss_imt_ue_ue[ue_interf,interfered_ue] \
-                                              - 2*self.parameters.imt.ue_body_loss \
-                                              - self.parameters.imt.ue_ohmic_loss
+                interference_ue = -np.inf*np.ones_like(ue)
+                ul_ues = self.link_ul[bi]
+                interferer_ue = []
+                interfered_ue = []
+                for ed in ue:
+                    for er in ul_ues:
+                        if self.ue_beam_rbs[ed] == self.ue_beam_rbs[er]:
+                            interfered_ue.append(ed)
+                            interferer_ue.append(er)
+                interfered_ue_idx = [k in interfered_ue for k in ue]
+                interference_ue[interfered_ue_idx] = self.ue.tx_power[interferer_ue] \
+                                                     - self.coupling_loss_imt_ue_ue[interferer_ue, interfered_ue] \
+                                                     - 2*self.parameters.imt.ue_body_loss \
+                                                     - self.parameters.imt.ue_ohmic_loss
            
                 self.ue.rx_interference[ue] = 10*np.log10( \
                     np.power(10, 0.1*self.ue.rx_interference[ue]) + \
                     np.power(10, 0.1*interference_bs) + \
                     np.power(10, 0.1*interference_ue))
-               
+
+            # in TN-FD only BSs will have self-interference
             self.ue.self_interference[ue] = -np.inf
-            ul_ues = self.link_ul[bs]
-            self.ue.self_interference[ul_ues] = self.ue.tx_power[ul_ues] - self.ue.sic[ul_ues]
 
         self.ue.thermal_noise = \
             10*math.log10(self.parameters.imt.BOLTZMANN_CONSTANT*self.parameters.imt.noise_temperature*1e3) + \
@@ -405,7 +413,7 @@ class SimulationTNFullDuplex(Simulation):
         bs_active = np.where(self.bs.active)[0]
         for bs in bs_active:
             ue = self.link_ul[bs]
-            ue_interfered_idx = [k in ue for k in self.link_dl[bs]]
+            ue_interfered_idx = [k != -1 for k in self.link_ul[bs]]
             self.bs.rx_power[bs] = self.ue.tx_power[ue]  \
                                    - self.parameters.imt.ue_ohmic_loss - self.parameters.imt.ue_body_loss \
                                    - self.coupling_loss_imt[bs,ue] - self.parameters.imt.bs_ohmic_loss
@@ -414,26 +422,41 @@ class SimulationTNFullDuplex(Simulation):
 
             # calculate intra system interference
             for bi in bs_interf:
-                ui = self.link_ul[bi]
-                ue_interferer_idx = [k in ui for k in self.link_dl[bi]]
-                is_interfered = np.logical_and(ue_interferer_idx,ue_interfered_idx)
-                interference_ue = -np.inf*np.ones_like(ue)
-                ui = list(np.array(ui)[is_interfered[ue_interferer_idx]])
-                interference_ue[is_interfered[ue_interfered_idx]] = self.ue.tx_power[ui] \
-                                                                    - self.parameters.imt.ue_ohmic_loss \
-                                                                    - self.parameters.imt.ue_body_loss \
-                                                                    - self.coupling_loss_imt[bs,ui] \
-                                                                    - self.parameters.imt.bs_ohmic_loss
-                     
-                bint = list(compress(np.arange(bi*self.parameters.imt.ue_k,\
-                                               (bi+1)*self.parameters.imt.ue_k)\
-                                     ,ue_interfered_idx))
-                interference_bs = self.bs.tx_power[bi][ue_interfered_idx] \
+                # interference from UEs
+                interference_ue = -np.inf * np.ones_like(ue)
+                ul_ues = self.link_ul[bi]
+                interferer_ue = []
+                interfered_ul_beam = []
+                for k, ed in enumerate(ue):
+                    for er in ul_ues:
+                        if self.ue_beam_rbs[ed] == self.ue_beam_rbs[er]:
+                            interfered_ul_beam.append(k)
+                            interferer_ue.append(er)
+                interference_ue[interfered_ul_beam] = self.ue.tx_power[interferer_ue]\
+                                                      - self.parameters.imt.ue_ohmic_loss\
+                                                      - self.parameters.imt.ue_body_loss\
+                                                      - self.coupling_loss_imt[bs, interferer_ue]\
+                                                      - self.parameters.imt.bs_ohmic_loss
+
+                # interference from BSs
+                bs_interfered_beam = []
+                bi_interferer_beam = []
+                # current BS beams
+                for bs_num, beam_bs in enumerate(self.bs_beam_rbs[bs]):
+                    # other BS beams
+                    for bi_num, beam_bi in enumerate(self.bs_beam_rbs[bi]):
+                        # if the beams are associated
+                        if beam_bs[1] == 'UL' and beam_bi[1] == 'DL' and beam_bs[1] == beam_bi[1]:
+                            # use its index
+                            bs_interfered_beam.append(bs_num)
+                            bi_interferer_beam.append(bi_num)
+
+                interference_bs = self.bs.tx_power[bi][bi_interferer_beam] \
                                   - self.parameters.imt.bs_ohmic_loss \
-                                  - self.coupling_loss_imt_bs_bs[bs,bint]
+                                  - self.coupling_loss_imt_bs_bs[bs, bi_interferer_beam]
                                 
-                self.bs.rx_interference[bs][ue_interfered_idx] = 10*np.log10( \
-                    np.power(10, 0.1*self.bs.rx_interference[bs][ue_interfered_idx])
+                self.bs.rx_interference[bs][bs_interfered_beam] = 10*np.log10( \
+                    np.power(10, 0.1*self.bs.rx_interference[bs][bs_interfered_beam])
                     + np.power(10, 0.1*interference_ue) \
                     + np.power(10, 0.1*interference_bs))
                 

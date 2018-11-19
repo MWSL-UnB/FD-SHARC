@@ -291,6 +291,102 @@ class SimulationTNFullDuplexTest(unittest.TestCase):
         npt.assert_allclose(self.simulation.bs.tx_power[1], np.array([p_tx]), atol=1e-2)
         npt.assert_allclose(self.simulation.ue.tx_power, 20 * np.ones(4))
 
+        # test method that calculates SINR
+        self.simulation.calculate_sinr()
+
+        # # check UE received power
+        # npt.assert_allclose(self.simulation.ue.rx_power,
+        #                     np.array([-70.48, -80.36, -70.55, -60.00]),
+        #                     atol=1e-2)
+        #
+        # # check UE received interference
+        # npt.assert_allclose(self.simulation.ue.rx_interference,
+        #                     np.array([-53.53, -52.45, -53.48, -52.44]),
+        #                     atol=1e-2)
+        #
+        # # check UE thermal noise
+        # npt.assert_allclose(self.simulation.ue.thermal_noise,
+        #                     np.array([-88.44, -88.44, -88.44, -88.44]),
+        #                     atol=1e-2)
+        #
+        # # check tx power
+        # npt.assert_allclose(self.simulation.ue.tx_power,
+        #                     np.array([20.0, 20.0, 20.0, 20.0]),
+        #                     atol=1e-2)
+        #
+        # # check self-interference
+        # npt.assert_allclose(self.simulation.ue.self_interference,
+        #                     np.array([-80, -80, -80, -80]),
+        #                     atol=1e-2)
+        #
+        # # check UE thermal noise + interference + self interference
+        # npt.assert_allclose(self.simulation.ue.total_interference,
+        #                     np.array([-53.52, -52.44, -53.48, -52.42]),
+        #                     atol=1e-2)
+        #
+        # # check SNR
+        # npt.assert_allclose(self.simulation.ue.snr,
+        #                     np.array([-70.48 - (-88.44), -80.36 - (-88.44), -70.55 - (-88.44), -60.00 - (-88.44)]),
+        #                     atol=1e-2)
+        #
+        # # check SINR
+        # npt.assert_allclose(self.simulation.ue.sinr,
+        #                     np.array([-70.48 - (-53.52), -80.36 - (-52.44), -70.54 - (-53.48), -60.00 - (-52.42)]),
+        #                     atol=5e-2)
+        #
+        # # check BS received power
+        # npt.assert_allclose(self.simulation.bs.rx_power[0],
+        #                     np.array([-57.47, -67.35]),
+        #                     atol=1e-2)
+        # npt.assert_allclose(self.simulation.bs.rx_power[1],
+        #                     np.array([-57.54, -46.99]),
+        #                     atol=1e-2)
+        #
+        # # check BS received interference
+        # npt.assert_allclose(self.simulation.bs.rx_interference[0],
+        #                     np.array([-60.27, -63.05]),
+        #                     atol=1e-2)
+        # npt.assert_allclose(self.simulation.bs.rx_interference[1],
+        #                     np.array([-75.50, -71.70]),
+        #                     atol=1e-2)
+        #
+        # # check BS thermal noise
+        # npt.assert_allclose(self.simulation.bs.thermal_noise,
+        #                     np.array([-90.44, -90.44]),
+        #                     atol=1e-2)
+        #
+        # # check BS thermal noise + interference
+        # npt.assert_allclose(self.simulation.bs.total_interference[0],
+        #                     np.array([-60.27, -63.05]),
+        #                     atol=1e-2)
+        # npt.assert_allclose(self.simulation.bs.total_interference[1],
+        #                     np.array([-75.29, -71.62]),
+        #                     atol=5e-2)
+        #
+        # # check self-interference
+        # npt.assert_allclose(self.simulation.bs.self_interference[0],
+        #                     np.array([-93.01, -93.01]),
+        #                     atol=1e-2)
+        # npt.assert_allclose(self.simulation.bs.self_interference[1],
+        #                     np.array([-93.01, -93.01]),
+        #                     atol=1e-2)
+        #
+        # # check SNR
+        # npt.assert_allclose(self.simulation.bs.snr[0],
+        #                     np.array([32.97, 23.09]),
+        #                     atol=1e-2)
+        # npt.assert_allclose(self.simulation.bs.snr[1],
+        #                     np.array([32.91, 43.45]),
+        #                     atol=1e-2)
+        #
+        # # check SINR
+        # npt.assert_allclose(self.simulation.bs.sinr[0],
+        #                     np.array([2.80, -4.30]),
+        #                     atol=1e-2)
+        # npt.assert_allclose(self.simulation.bs.sinr[1],
+        #                     np.array([17.75, 24.62]),
+        #                     atol=1e-2)
+
     def test_simulation_2bs_4ue_fss_ss_imbalance(self):
         self.param.imt.dl_load_imbalance = 2.0
         self.param.imt.ul_load_imbalance = 1.0 / self.param.imt.dl_load_imbalance
