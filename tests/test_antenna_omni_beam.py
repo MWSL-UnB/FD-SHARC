@@ -35,7 +35,7 @@ class AntennaOmniBeamTest(unittest.TestCase):
                                             beams_l=beams_idx)
         
         # Assert
-        npt.assert_equal(gains,beams_idx)
+        npt.assert_equal(gains,beams_idx + 1)
         
         # Check error raise
         beams_idx = np.array([0,1,3,1,0])
