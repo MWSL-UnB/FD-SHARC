@@ -585,7 +585,7 @@ class SimulationTNFullDuplex(Simulation):
         accumulated_interference_ue = -np.inf
         for bs in bs_active:
             ue = self.link_ul[bs]
-            ue_interf_mask = [k in ue for k in self.link[bs]]
+            ue_interf_mask = [k < len(ue) for k in range(len(self.link_dl[bs]))]
 
             interference_ue = self.ue.tx_power[ue] - self.parameters.imt.ue_ohmic_loss \
                               - self.parameters.imt.ue_body_loss \
