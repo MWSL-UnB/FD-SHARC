@@ -8,6 +8,7 @@ Created on Fri Sep  7 10:27:04 2018
 from itertools import compress
 import numpy as np
 import math
+from warnings import filterwarnings
 
 from sharc.support.enumerations import StationType
 from sharc.station_manager import StationManager
@@ -33,6 +34,8 @@ class SimulationTNFullDuplex(Simulation):
         self.bs_to_ue_beam_idx = np.empty(0)
         self.ue_beam_rbs = np.empty(0)
         self.bs_beam_rbs = dict()
+
+        filterwarnings("ignore", "invalid value encountered in", RuntimeWarning)
 
     def initialize(self, *args, **kwargs):
         super().initialize(*args,**kwargs)
