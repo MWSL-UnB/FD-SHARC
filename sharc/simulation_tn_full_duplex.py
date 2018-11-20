@@ -51,7 +51,12 @@ class SimulationTNFullDuplex(Simulation):
 
         self.propagation_imt = PropagationFactory.create_propagation(self.parameters.imt.channel_model, self.parameters,
                                                                      random_number_gen)
-        self.propagation_system = PropagationFactory.create_propagation(self.param_system.channel_model, self.parameters,
+        self.propagation_imt_bs_bs = PropagationFactory.create_propagation(self.parameters.imt.bs_bs_channel_model,
+                                                                           self.parameters, random_number_gen)
+        self.propagation_imt_ue_ue = PropagationFactory.create_propagation(self.parameters.imt.ue_ue_channel_model,
+                                                                           self.parameters, random_number_gen)
+        self.propagation_system = PropagationFactory.create_propagation(self.param_system.channel_model,
+                                                                        self.parameters,
                                                                         random_number_gen)
         
         # In case of hotspots, base stations coordinates have to be calculated
@@ -166,7 +171,7 @@ class SimulationTNFullDuplex(Simulation):
             self.link_ul[bs] = self.link_ul[bs][ul_ues]
             
             # Activate the selected UE's and create beams
-            self.ue.active[self.link[bs]] = np.ones(K, dtype=bool)
+            self.ue.active[self.link[bs]] = True
             for ue in self.link[bs]:
                 # add beam to BS antennas
                 self.bs.antenna[bs].add_beam(self.bs_to_ue_phi[bs,ue],
@@ -271,10 +276,12 @@ class SimulationTNFullDuplex(Simulation):
             gain_a = all_gains
             gain_b = np.zeros_like(all_gains)
 
+            station_a_active = np.where(station_a.active)[0]
+            station_b_active = np.where(station_b.active)[0]
             # loop in the current BS
-            for k in range(station_a.num_stations):
+            for k in station_a_active:
                 # loop in the other BS
-                for m in range(station_b.num_stations):
+                for m in station_b_active:
                     station_b_beams = [n for n in range(m*self.parameters.imt.ue_k*self.parameters.imt.ue_k_m,
                                                         (m+1)*self.parameters.imt.ue_k*self.parameters.imt.ue_k_m)]
 
