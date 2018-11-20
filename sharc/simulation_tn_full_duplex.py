@@ -161,6 +161,9 @@ class SimulationTNFullDuplex(Simulation):
                 else:
                     self.ue_beam_rbs[ue] = -1
                     self.bs_beam_rbs[bs].append(('', -1))
+
+            # redefine link_ul
+            self.link_ul[bs] = self.link_ul[bs][ul_ues]
             
             # Activate the selected UE's and create beams
             self.ue.active[self.link[bs]] = np.ones(K, dtype=bool)
@@ -367,8 +370,11 @@ class SimulationTNFullDuplex(Simulation):
             for bi in bs_interf:
                 #  Interference from BSs
                 if bi != bs:
-                    interference_bs = self.bs.tx_power[bi] - self.coupling_loss_imt[bi,ue] \
-                                    - self.parameters.imt.ue_body_loss - self.parameters.imt.ue_ohmic_loss
+                    interference_bs = self.bs.tx_power[bi] \
+                                      - self.parameters.imt.bs_ohmic_loss \
+                                      - self.coupling_loss_imt[bi, ue] \
+                                      - self.parameters.imt.ue_body_loss \
+                                      - self.parameters.imt.ue_ohmic_loss
                 else:
                     interference_bs = -np.inf
                            
@@ -386,7 +392,7 @@ class SimulationTNFullDuplex(Simulation):
                 interference_ue[interfered_ue_idx] = self.ue.tx_power[interferer_ue] \
                                                      - self.coupling_loss_imt_ue_ue[interferer_ue, interfered_ue] \
                                                      - 2*self.parameters.imt.ue_body_loss \
-                                                     - self.parameters.imt.ue_ohmic_loss
+                                                     - 2*self.parameters.imt.ue_ohmic_loss
            
                 self.ue.rx_interference[ue] = 10*np.log10( \
                     np.power(10, 0.1*self.ue.rx_interference[ue]) + \
@@ -403,8 +409,7 @@ class SimulationTNFullDuplex(Simulation):
             
         self.ue.total_interference = \
             10*np.log10(np.power(10, 0.1*self.ue.rx_interference) + \
-                        np.power(10, 0.1*self.ue.thermal_noise)   + \
-                        np.power(10, 0.1*self.ue.self_interference))
+                        np.power(10, 0.1*self.ue.thermal_noise))
             
         self.ue.sinr = self.ue.rx_power - self.ue.total_interference
         self.ue.snr = self.ue.rx_power - self.ue.thermal_noise
@@ -413,7 +418,7 @@ class SimulationTNFullDuplex(Simulation):
         bs_active = np.where(self.bs.active)[0]
         for bs in bs_active:
             ue = self.link_ul[bs]
-            ue_interfered_idx = [k != -1 for k in self.link_ul[bs]]
+            self_interference_idx = [k < len(ue) for k in range(len(self.link_dl[bs]))]
             self.bs.rx_power[bs] = self.ue.tx_power[ue]  \
                                    - self.parameters.imt.ue_ohmic_loss - self.parameters.imt.ue_body_loss \
                                    - self.coupling_loss_imt[bs,ue] - self.parameters.imt.bs_ohmic_loss
@@ -441,31 +446,38 @@ class SimulationTNFullDuplex(Simulation):
                 # interference from BSs
                 bs_interfered_beam = []
                 bi_interferer_beam = []
+                bs_ul_interfered_beam = []
+                bi_dl_interferer_beam = []
+                ul_count = 0
                 # current BS beams
                 for bs_num, beam_bs in enumerate(self.bs_beam_rbs[bs]):
                     # other BS beams
+                    dl_count = 0
                     for bi_num, beam_bi in enumerate(self.bs_beam_rbs[bi]):
                         # if the beams are associated
-                        if beam_bs[1] == 'UL' and beam_bi[1] == 'DL' and beam_bs[1] == beam_bi[1]:
+                        if beam_bs[0] == 'UL' and beam_bi[0] == 'DL' and beam_bs[1] == beam_bi[1]:
                             # use its index
                             bs_interfered_beam.append(bs_num)
-                            bi_interferer_beam.append(bi_num)
+                            bi_interferer_beam.append(bs*self.parameters.imt.ue_k*self.parameters.imt.ue_k_m + bi_num)
+                            bi_dl_interferer_beam.append(dl_count)
+                            bs_ul_interfered_beam.append(ul_count)
+                        if beam_bi[0] == 'DL':
+                            dl_count += 1
+                    if beam_bs[0] == 'UL':
+                        ul_count += 1
 
-                interference_bs = self.bs.tx_power[bi][bi_interferer_beam] \
-                                  - self.parameters.imt.bs_ohmic_loss \
-                                  - self.coupling_loss_imt_bs_bs[bs, bi_interferer_beam]
+                interference_bs = self.bs.tx_power[bi][bi_dl_interferer_beam] \
+                                  - 2*self.parameters.imt.bs_ohmic_loss \
+                                  - self.coupling_loss_imt_bs_bs[bi, bi_interferer_beam]
                                 
-                self.bs.rx_interference[bs][bs_interfered_beam] = 10*np.log10( \
-                    np.power(10, 0.1*self.bs.rx_interference[bs][bs_interfered_beam])
+                self.bs.rx_interference[bs][bs_ul_interfered_beam] = 10*np.log10( \
+                    np.power(10, 0.1*self.bs.rx_interference[bs][bs_ul_interfered_beam])
                     + np.power(10, 0.1*interference_ue) \
                     + np.power(10, 0.1*interference_bs))
                 
-            self.bs.rx_interference[bs] = self.bs.rx_interference[bs][ue_interfered_idx]
-                
             # calculate self interference
-            self.bs.self_interference[bs] = -np.inf*np.ones_like(self.link_dl[bs])
-            self.bs.self_interference[bs][ue_interfered_idx] = self.bs.tx_power[bs][ue_interfered_idx] -\
-                                                               self.bs.sic[bs]
+            self.bs.self_interference[bs][self_interference_idx] = self.bs.tx_power[bs][self_interference_idx] - \
+                                                                   self.bs.sic[bs]
             
             # calculate N
             self.bs.thermal_noise[bs] = \
@@ -477,7 +489,7 @@ class SimulationTNFullDuplex(Simulation):
             self.bs.total_interference[bs] = \
                 10*np.log10(np.power(10, 0.1*self.bs.rx_interference[bs]) + \
                             np.power(10, 0.1*self.bs.thermal_noise[bs])   + \
-                            np.power(10, 0.1*self.bs.self_interference[bs][ue_interfered_idx]))
+                            np.power(10, 0.1*self.bs.self_interference[bs]))
                 
             # calculate SNR and SINR
             self.bs.sinr[bs] = self.bs.rx_power[bs] - self.bs.total_interference[bs]
