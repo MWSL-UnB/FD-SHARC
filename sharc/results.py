@@ -79,6 +79,11 @@ class Results(object):
         self.imt_ue_thermal_noise = list()
         self.imt_bs_thermal_noise = list()
 
+        self.imt_coupling_loss_interf_bs_bs = list()
+        self.imt_coupling_loss_interf_bs_ue = list()
+        self.imt_coupling_loss_interf_ue_ue = list()
+        self.imt_coupling_loss_interf_ue_bs = list()
+
         self.system_inr = list()
         self.system_inr_scaled = list()
         self.output_directory = out_dir

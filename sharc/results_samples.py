@@ -452,6 +452,38 @@ class ResultsSamples(Results):
             y_label = "Noise [dBm]"
             file_name = title
             self.plot_list.append(Plot(x, y, x_label, y_label, title, file_name))
+        if len(self.imt_coupling_loss_interf_bs_bs) > 0:
+            x = np.arange(len(self.imt_coupling_loss_interf_bs_bs))
+            y = np.array(self.imt_coupling_loss_interf_bs_bs)
+            title = "[IMT] Samples of interfered BS to BS coupling loss"
+            x_label = "Number of samples"
+            y_label = "Loss [dB]"
+            file_name = title
+            self.plot_list.append(Plot(x, y, x_label, y_label, title, file_name))
+        if len(self.imt_coupling_loss_interf_bs_ue) > 0:
+            x = np.arange(len(self.imt_coupling_loss_interf_bs_ue))
+            y = np.array(self.imt_coupling_loss_interf_bs_ue)
+            title = "[IMT] Samples of interfered BS to UE coupling loss"
+            x_label = "Number of samples"
+            y_label = "Loss [dB]"
+            file_name = title
+            self.plot_list.append(Plot(x, y, x_label, y_label, title, file_name))
+        if len(self.imt_coupling_loss_interf_bs_ue) > 0:
+            x = np.arange(len(self.imt_coupling_loss_interf_ue_ue))
+            y = np.array(self.imt_coupling_loss_interf_ue_ue)
+            title = "[IMT] Samples of interfered UE to UE coupling loss"
+            x_label = "Number of samples"
+            y_label = "Loss [dB]"
+            file_name = title
+            self.plot_list.append(Plot(x, y, x_label, y_label, title, file_name))
+        if len(self.imt_coupling_loss_interf_bs_ue) > 0:
+            x = np.arange(len(self.imt_coupling_loss_interf_ue_bs))
+            y = np.array(self.imt_coupling_loss_interf_ue_bs)
+            title = "[IMT] Samples of interfered UE to BS coupling loss"
+            x_label = "Number of samples"
+            y_label = "Loss [dB]"
+            file_name = title
+            self.plot_list.append(Plot(x, y, x_label, y_label, title, file_name))
                       
             
     def write_files(self, snapshot_number: int):
@@ -499,7 +531,7 @@ class ResultsSamples(Results):
         self.imt_ul_tput_ext = list()
         self.imt_ul_tput = list()
         self.imt_ul_total_tput = list()
-        
+
         self.imt_total_tput = list()
 
         self.imt_path_loss = list()
@@ -507,13 +539,13 @@ class ResultsSamples(Results):
         self.imt_coupling_loss_all = list()
         self.imt_bs_antenna_gain = list()
         self.imt_ue_antenna_gain = list()
-        
+
         self.imt_coupling_loss_bs_bs = list()
         self.imt_coupling_loss_ue_ue = list()
-        
+
         self.system_imt_antenna_gain = list()
         self.imt_system_antenna_gain = list()
-        
+
         self.system_imt_ue_antenna_gain = list()
         self.system_imt_bs_antenna_gain = list()
         self.imt_ue_system_antenna_gain = list()
@@ -528,13 +560,13 @@ class ResultsSamples(Results):
         self.imt_dl_tput_ext = list()
         self.imt_dl_tput = list()
         self.imt_dl_total_tput = list()
-        
+
         self.imt_bs_bs_path_loss = list()
         self.imt_ue_ue_path_loss = list()
-        
+
         self.imt_bs_bs_antenna_gain = list()
         self.imt_ue_ue_antenna_gain = list()
-        
+
         self.system_ul_coupling_loss = list()
         self.system_ul_interf_power = list()
         self.system_ul_inr_scaled = list()
@@ -542,14 +574,28 @@ class ResultsSamples(Results):
         self.system_dl_coupling_loss = list()
         self.system_dl_interf_power = list()
         self.system_dl_inr_scaled = list()
-        
+
         self.imt_dl_rx_power = list()
         self.imt_ul_rx_power = list()
-        self.imt_dl_ue_interf = list()
-        self.imt_ul_bs_interf = list()
+        self.imt_dl_ue_total_interf = list()
+        self.imt_ul_bs_total_interf = list()
+
+        self.imt_dl_ue_self_interf = list()
+        self.imt_ul_bs_self_interf = list()
+        self.imt_ue_interf_from_ue = list()
+        self.imt_ue_interf_from_bs = list()
+        self.imt_bs_interf_from_ue = list()
+        self.imt_bs_interf_from_bs = list()
+        self.imt_ue_thermal_noise = list()
+        self.imt_bs_thermal_noise = list()
+
+        self.imt_coupling_loss_interf_bs_bs = list()
+        self.imt_coupling_loss_interf_bs_ue = list()
+        self.imt_coupling_loss_interf_ue_ue = list()
+        self.imt_coupling_loss_interf_ue_bs = list()
 
         self.system_inr = list()
         self.system_inr_scaled = list()
-        
+
         self.plot_list = list()
 
