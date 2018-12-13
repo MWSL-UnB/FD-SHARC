@@ -10,7 +10,8 @@ from sharc.support.observer import Observer
 from sharc.support.enumerations import State
 from sharc.simulation_downlink import SimulationDownlink
 from sharc.simulation_uplink import SimulationUplink
-from sharc.simulation_full_duplex import SimulationFullDuplex
+from sharc.simulation_bd_full_duplex import SimulationBDFullDuplex
+from sharc.simulation_tn_full_duplex import SimulationTNFullDuplex
 from sharc.parameters.parameters import Parameters
 
 import random
@@ -55,8 +56,13 @@ class Model(Observable):
             self.simulation = SimulationDownlink(self.parameters, self.param_file)
         elif self.parameters.general.imt_link == "UPLINK":
             self.simulation = SimulationUplink(self.parameters, self.param_file)
-        elif self.parameters.general.imt_link == "FULLDUPLEX":
-            self.simulation = SimulationFullDuplex(self.parameters, self.param_file)
+        elif self.parameters.general.imt_link == "BD-FULLDUPLEX":
+            self.simulation = SimulationBDFullDuplex(self.parameters, self.param_file)
+        elif self.parameters.general.imt_link == "TN-FULLDUPLEX":
+            self.simulation = SimulationTNFullDuplex(self.parameters, self.param_file)
+        else:
+            print("ERROR: Unknown imt_link parameters value: {}".format(self.parameters.general.imt_link))
+            sys.exit(3)
         self.simulation.add_observer_list(self.observers)
 
         description = self.get_description()
