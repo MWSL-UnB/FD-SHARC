@@ -188,7 +188,7 @@ class SimulationBDFullDuplex(Simulation):
 
                 self.ue.interference_from_bs[ue] = 10 * np.log10(np.power(10, 0.1 * self.ue.interference_from_bs[ue]) +
                                                                  np.power(10, 0.1 * interference_bs))
-                self.ue.coupling_loss_to_bs.append(list(self.coupling_loss_imt[bi, ue]))
+                self.ue.coupling_loss_to_bs.extend(list(self.coupling_loss_imt[bi, ue]))
 
                 # Interference from UEs
                 interference_ue = -np.inf * np.ones_like(self.link_dl[bi])
@@ -202,7 +202,7 @@ class SimulationBDFullDuplex(Simulation):
 
                 self.ue.interference_from_ue[ue] = 10 * np.log10(np.power(10, 0.1 * self.ue.interference_from_ue[ue]) +
                                                                  np.power(10, 0.1 * interference_ue))
-                self.ue.coupling_loss_to_ue.append(list(self.coupling_loss_imt_ue_ue[ue_interf, interfered_ue]))
+                self.ue.coupling_loss_to_ue.extend(list(self.coupling_loss_imt_ue_ue[ue_interf, interfered_ue]))
 
                 self.ue.rx_interference[ue] = 10 * np.log10( \
                     np.power(10, 0.1 * self.ue.rx_interference[ue]) + \
@@ -253,7 +253,7 @@ class SimulationBDFullDuplex(Simulation):
                 self.bs.interference_from_ue[bs][ue_interfered_idx] = 10 * np.log10(
                     np.power(10, 0.1 * self.bs.interference_from_ue[bs][ue_interfered_idx])
                     + np.power(10, 0.1 * interference_ue))
-                self.bs.coupling_loss_to_ue.append(list(self.coupling_loss_imt[bs, ui]))
+                self.bs.coupling_loss_to_ue.extend(list(self.coupling_loss_imt[bs, ui]))
 
                 bint = list(compress(np.arange(bi * self.parameters.imt.ue_k,
                                                (bi + 1) * self.parameters.imt.ue_k), ue_interfered_idx))
@@ -264,7 +264,7 @@ class SimulationBDFullDuplex(Simulation):
                 self.bs.interference_from_bs[bs][ue_interfered_idx] = 10 * np.log10(
                     np.power(10, 0.1 * self.bs.interference_from_bs[bs][ue_interfered_idx])
                     + np.power(10, 0.1 * interference_bs))
-                self.bs.coupling_loss_to_bs.append(list(self.coupling_loss_imt_bs_bs[bs, bint]))
+                self.bs.coupling_loss_to_bs.extend(list(self.coupling_loss_imt_bs_bs[bs, bint]))
 
                 self.bs.rx_interference[bs][ue_interfered_idx] = 10 * np.log10( \
                     np.power(10, 0.1 * self.bs.rx_interference[bs][ue_interfered_idx])
@@ -445,10 +445,10 @@ class SimulationBDFullDuplex(Simulation):
                 ue_ue_ag = ue_ue_ag[~np.isnan(ue_ue_ag)]
                 self.results.imt_ue_ue_antenna_gain.extend(ue_ue_ag)
 
-                self.results.imt_coupling_loss_interf_bs_bs.append(self.bs.coupling_loss_to_bs)
-                self.results.imt_coupling_loss_interf_bs_ue.append(self.bs.coupling_loss_to_ue)
-                self.results.imt_coupling_loss_interf_ue_ue.append(self.ue.coupling_loss_to_ue)
-                self.results.imt_coupling_loss_interf_bs_bs.append(self.ue.coupling_loss_to_bs)
+                self.results.imt_coupling_loss_interf_bs_bs.extend(self.bs.coupling_loss_to_bs)
+                self.results.imt_coupling_loss_interf_bs_ue.extend(self.bs.coupling_loss_to_ue)
+                self.results.imt_coupling_loss_interf_ue_ue.extend(self.ue.coupling_loss_to_ue)
+                self.results.imt_coupling_loss_interf_ue_bs.extend(self.ue.coupling_loss_to_bs)
 
             self.results.imt_bs_antenna_gain.extend(self.imt_bs_antenna_gain[bs, ue])
             self.results.imt_ue_antenna_gain.extend(self.imt_ue_antenna_gain[bs, ue])
