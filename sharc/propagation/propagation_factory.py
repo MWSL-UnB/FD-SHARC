@@ -50,7 +50,7 @@ class PropagationFactory(object):
         elif channel_model == "HDFSS":
             return PropagationHDFSS(random_number_gen)
         elif channel_model == "INDOOR":
-            return PropagationIndoor(random_number_gen, param.indoor)
+            return PropagationIndoor(random_number_gen, param.indoor, param.imt.ue_k * param.imt.ue_k_m)
         elif channel_model == "IMT_P1411":
             return PropagationImtP1411(random_number_gen)
         else:
