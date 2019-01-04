@@ -44,7 +44,13 @@ class Simulation(ABC, Observable):
             self.param_system = self.parameters.rns
         elif self.parameters.general.system == "RAS":
             self.param_system = self.parameters.ras
-            
+        elif self.parameters.general.system == "NONE":
+            self.param_system = Parameters()
+            self.param_system.frequency = 0.0
+            self.param_system.bandwidth = 0.0
+            self.param_system.channel_model = "NONE"
+            self.param_system.antenna_pattern = "NONE"
+
         self.wrap_around_enabled = self.parameters.imt.wrap_around and \
                                   (self.parameters.imt.topology == 'MACROCELL' \
                                    or self.parameters.imt.topology == 'HOTSPOT') and \
@@ -97,24 +103,24 @@ class Simulation(ABC, Observable):
 
         self.results = None
 
-        imt_min_freq = self.parameters.imt.frequency - self.parameters.imt.bandwidth / 2
-        imt_max_freq = self.parameters.imt.frequency + self.parameters.imt.bandwidth / 2
-        system_min_freq = self.param_system.frequency - self.param_system.bandwidth / 2
-        system_max_freq = self.param_system.frequency + self.param_system.bandwidth / 2
+        if self.parameters.general.system != "NONE":
+            imt_min_freq = self.parameters.imt.frequency - self.parameters.imt.bandwidth / 2
+            imt_max_freq = self.parameters.imt.frequency + self.parameters.imt.bandwidth / 2
+            system_min_freq = self.param_system.frequency - self.param_system.bandwidth / 2
+            system_max_freq = self.param_system.frequency + self.param_system.bandwidth / 2
 
-        max_min_freq = np.maximum(imt_min_freq, system_min_freq)
-        min_max_freq = np.minimum(imt_max_freq, system_max_freq)
+            max_min_freq = np.maximum(imt_min_freq, system_min_freq)
+            min_max_freq = np.minimum(imt_max_freq, system_max_freq)
 
-        self.overlapping_bandwidth = min_max_freq - max_min_freq
-        if self.overlapping_bandwidth < 0:
-            self.overlapping_bandwidth = 0
+            self.overlapping_bandwidth = min_max_freq - max_min_freq
+            if self.overlapping_bandwidth < 0:
+                self.overlapping_bandwidth = 0
 
-        if (self.overlapping_bandwidth == self.param_system.bandwidth and
-            not self.parameters.imt.interfered_with) or \
-           (self.overlapping_bandwidth == self.parameters.imt.bandwidth and
-            self.parameters.imt.interfered_with):
-
-            self.adjacent_channel = False
+            if (self.overlapping_bandwidth == self.param_system.bandwidth and
+                not self.parameters.imt.interfered_with) or \
+                (self.overlapping_bandwidth == self.parameters.imt.bandwidth and
+                self.parameters.imt.interfered_with):
+                self.adjacent_channel = False
 
         self.propagation_imt = None
         self.propagation_imt_bs_bs = None

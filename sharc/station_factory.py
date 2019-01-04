@@ -412,6 +412,8 @@ class StationFactory(object):
             return StationFactory.generate_rns(parameters.rns, random_number_gen)
         elif parameters.general.system == "RAS":
             return StationFactory.generate_ras_station(parameters.ras)
+        elif parameters.general.system == "NONE":
+            return None
         else:
             sys.stderr.write("ERROR\nInvalid system: " + parameters.general.system)
             sys.exit(1)
