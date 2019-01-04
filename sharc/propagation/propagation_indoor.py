@@ -110,7 +110,7 @@ if __name__ == '__main__':
     num_ue = num_bs*ue_per_bs
     distance_2D = 150*np.random.random((num_bs, num_ue))
     frequency = 27000*np.ones(distance_2D.shape)
-    indoor = np.array([np.random.rand(num_bs) < params.ue_indoor_percent])
+    indoor = np.array([np.random.rand(num_ue) < params.ue_indoor_percent])
     h_bs = 3*np.ones(num_bs)
     h_ue = 1.5*np.ones(num_ue)
     distance_3D = np.sqrt(distance_2D**2 + (h_bs[:,np.newaxis] - h_ue)**2)
