@@ -100,7 +100,8 @@ class SimulationBDFullDuplex(Simulation):
             # Execute this piece of code if the other system generates 
             # interference into IMT
             self.calculate_sinr()
-            self.calculate_sinr_ext()
+            if self.parameters.general.system != "NONE":
+                self.calculate_sinr_ext()
             # self.recalculate_sinr()
             # self.calculate_imt_degradation()
             pass
@@ -108,7 +109,8 @@ class SimulationBDFullDuplex(Simulation):
             # Execute this piece of code if IMT generates interference into
             # the other system
             self.calculate_sinr()
-            self.calculate_external_interference()
+            if self.parameters.general.system != "NONE":
+                self.calculate_external_interference()
             # self.calculate_external_degradation()
             pass
 
@@ -403,7 +405,7 @@ class SimulationBDFullDuplex(Simulation):
         self.system.inr = np.array([self.system.rx_interference - self.system.thermal_noise])
 
     def collect_results(self, write_to_file: bool, snapshot_number: int):
-        if not self.parameters.imt.interfered_with:
+        if (not self.parameters.imt.interfered_with) and self.parameters.general.system != "NONE":
             self.results.system_inr.extend(self.system.inr.tolist())
             self.results.system_inr_scaled.extend(
                 (self.system.inr + 10 * math.log10(self.param_system.inr_scaling)).tolist())
@@ -490,15 +492,16 @@ class SimulationBDFullDuplex(Simulation):
                 self.results.imt_ul_sinr_ext.extend(self.bs.sinr_ext[bs].tolist())
                 self.results.imt_ul_inr.extend(self.bs.inr[bs].tolist())
 
-            self.results.system_imt_ue_antenna_gain.extend(self.system_imt_ue_antenna_gain[0, ue])
-            self.results.imt_ue_system_antenna_gain.extend(self.imt_ue_system_antenna_gain[0, ue])
+            if self.parameters.general.system != "NONE":
+                self.results.system_imt_ue_antenna_gain.extend(self.system_imt_ue_antenna_gain[0, ue])
+                self.results.imt_ue_system_antenna_gain.extend(self.imt_ue_system_antenna_gain[0, ue])
 
-            active_beams = [i for i in range(bs * self.parameters.imt.ue_k, (bs + 1) * self.parameters.imt.ue_k)]
-            self.results.system_imt_bs_antenna_gain.extend(self.system_imt_bs_antenna_gain[0, active_beams])
-            self.results.imt_bs_system_antenna_gain.extend(self.imt_bs_system_antenna_gain[0, active_beams])
+                active_beams = [i for i in range(bs * self.parameters.imt.ue_k, (bs + 1) * self.parameters.imt.ue_k)]
+                self.results.system_imt_bs_antenna_gain.extend(self.system_imt_bs_antenna_gain[0, active_beams])
+                self.results.imt_bs_system_antenna_gain.extend(self.imt_bs_system_antenna_gain[0, active_beams])
 
-            self.results.system_ul_coupling_loss.extend(self.coupling_loss_imt_ue_system[ue_ul])
-            self.results.system_dl_coupling_loss.extend([self.coupling_loss_imt_bs_system[bs]])
+                self.results.system_ul_coupling_loss.extend(self.coupling_loss_imt_ue_system[ue_ul])
+                self.results.system_dl_coupling_loss.extend([self.coupling_loss_imt_bs_system[bs]])
 
             self.results.imt_dl_tx_power.extend(self.bs.tx_power[bs].tolist())
             self.results.imt_dl_rx_power.extend(self.ue.rx_power[ue].tolist())

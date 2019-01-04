@@ -53,6 +53,8 @@ class PropagationFactory(object):
             return PropagationIndoor(random_number_gen, param.indoor)
         elif channel_model == "IMT_P1411":
             return PropagationImtP1411(random_number_gen)
+        elif channel_model == "NONE":
+            return None
         else:
             sys.stderr.write("ERROR\nInvalid channel_model: " + channel_model)
             sys.exit(1)

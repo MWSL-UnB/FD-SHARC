@@ -69,7 +69,8 @@ class SimulationUplink(Simulation):
             # Execute this piece of code if the other system generates 
             # interference into IMT
             self.calculate_sinr()
-            self.calculate_sinr_ext()
+            if self.parameters.general.system != "NONE":
+                self.calculate_sinr_ext()
             #self.add_external_interference()
             #self.recalculate_sinr()
             #self.calculate_imt_degradation()
@@ -78,7 +79,8 @@ class SimulationUplink(Simulation):
             # Execute this piece of code if IMT generates interference into
             # the other system
             self.calculate_sinr()
-            self.calculate_external_interference()
+            if self.parameters.general.system != "NONE":
+                self.calculate_external_interference()
             #self.calculate_external_degradation()
             pass
         
@@ -233,7 +235,7 @@ class SimulationUplink(Simulation):
 
 
     def collect_results(self, write_to_file: bool, snapshot_number: int):
-        if not self.parameters.imt.interfered_with:
+        if (not self.parameters.imt.interfered_with) and self.parameters.general.system != "NONE":
             self.results.system_inr.extend(self.system.inr.tolist())
             self.results.system_inr_scaled.extend([self.system.inr + 10*math.log10(self.param_system.inr_scaling)])
             if self.system.station_type is StationType.RAS:
@@ -270,11 +272,12 @@ class SimulationUplink(Simulation):
                 self.results.imt_ul_tput_ext.extend(tput_ext.tolist())  
                 self.results.imt_ul_sinr_ext.extend(self.bs.sinr_ext[bs].tolist())
                 self.results.imt_ul_inr.extend(self.bs.inr[bs].tolist())
-                
-                active_beams = [i for i in range(bs*self.parameters.imt.ue_k, (bs+1)*self.parameters.imt.ue_k)]
-                self.results.system_imt_antenna_gain.extend(self.system_imt_antenna_gain[0,active_beams])
-                self.results.imt_system_antenna_gain.extend(self.imt_system_antenna_gain[0,active_beams]) 
-            else:
+
+                if self.parameters.general.system != "NONE":
+                    active_beams = [i for i in range(bs*self.parameters.imt.ue_k, (bs+1)*self.parameters.imt.ue_k)]
+                    self.results.system_imt_antenna_gain.extend(self.system_imt_antenna_gain[0,active_beams])
+                    self.results.imt_system_antenna_gain.extend(self.imt_system_antenna_gain[0,active_beams])
+            elif self.parameters.general.system != "NONE":
                 self.results.system_imt_antenna_gain.extend(self.system_imt_antenna_gain[0,ue])
                 self.results.imt_system_antenna_gain.extend(self.imt_system_antenna_gain[0,ue])                
             
