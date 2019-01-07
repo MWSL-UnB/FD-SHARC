@@ -366,6 +366,8 @@ class StationFactory(object):
         imt_ue.rx_interference = -500*np.ones(num_ue)
         imt_ue.self_interference = -500*np.ones(num_ue)
         imt_ue.ext_interference = -500*np.ones(num_ue)
+        imt_ue.interference_from_bs = -500 * np.ones(num_ue)
+        imt_ue.interference_from_ue = -500 * np.ones(num_ue)
           
         # TODO: this piece of code works only for uplink
         par = param_ant.get_antenna_parameters("UE","TX")
