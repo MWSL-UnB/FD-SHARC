@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 """
 Created on Mon Dec 18 20:10:14 2017
-
 @author: edgar
 """
 
@@ -26,6 +25,7 @@ class PropagationIndoorTest(unittest.TestCase):
     #    params.street_width = 30
         params.ue_indoor_percent = .95
         params.building_class = "TRADITIONAL"
+        params.num_cells = 3
 
         bs_per_building = 3
         ue_per_bs = 3
@@ -34,14 +34,22 @@ class PropagationIndoorTest(unittest.TestCase):
         num_ue = num_bs*ue_per_bs
         distance_2D = 150*np.random.random((num_bs, num_ue))
         frequency = 27000*np.ones(distance_2D.shape)
-        indoor = np.random.rand(num_bs) < params.ue_indoor_percent
+        indoor = np.array([np.random.rand(num_ue) < params.ue_indoor_percent])
         h_bs = 3*np.ones(num_bs)
         h_ue = 1.5*np.ones(num_ue)
         distance_3D = np.sqrt(distance_2D**2 + (h_bs[:,np.newaxis] - h_ue)**2)
         height_diff = np.tile(h_bs, (num_bs, 3)) - np.tile(h_ue, (num_bs, 1))
         elevation = np.degrees(np.arctan(height_diff/distance_2D))
 
-        propagation_indoor = PropagationIndoor(np.random.RandomState(), params)
+        propagation_indoor = PropagationIndoor(np.random.RandomState(), params, ue_per_bs)
+
+        propagation_indoor = PropagationIndoor(np.random.RandomState(), params, ue_per_bs)
+        loss_indoor = propagation_indoor.get_loss(distance_3D=distance_3D,
+                                                  distance_2D=distance_2D,
+                                                  elevation=elevation,
+                                                  frequency=frequency,
+                                                  indoor_stations=indoor,
+                                                  shadowing=False)
 
 if __name__ == '__main__':
     unittest.main()
