@@ -23,6 +23,7 @@ from sharc.propagation.propagation_indoor import PropagationIndoor
 from sharc.propagation.propagation_fd_indoor import PropagationFDIndoor
 from sharc.propagation.propagation_hdfss import PropagationHDFSS
 from sharc.propagation.propagation_imt_p1411 import PropagationImtP1411
+from sharc.propagation.propagation_imt_p1411_los import PropagationImtP1411Los
 
 class PropagationFactory(object):
 
@@ -36,8 +37,6 @@ class PropagationFactory(object):
             return PropagationUMa(random_number_gen)
         elif channel_model == "UMi":
             return PropagationUMi(random_number_gen)
-        elif channel_model == "CI":
-            return PropagationCloseIn(random_number_gen)
         elif channel_model == "SatelliteSimple":
             return PropagationSatSimple(random_number_gen)
         elif channel_model == "TerrestrialSimple":
@@ -56,6 +55,8 @@ class PropagationFactory(object):
             return PropagationFDIndoor(random_number_gen, param.indoor, param.imt.ue_k * param.imt.ue_k_m)
         elif channel_model == "IMT_P1411":
             return PropagationImtP1411(random_number_gen)
+        elif channel_model == "IMT_P1411_LOS":
+            return PropagationImtP1411Los(random_number_gen)
         elif channel_model == "NONE":
             return None
         else:
