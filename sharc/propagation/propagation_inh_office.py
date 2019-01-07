@@ -41,6 +41,7 @@ class PropagationInhOffice(Propagation):
         f = kwargs["frequency"]
         indoor = kwargs["indoor"]
         std = kwargs["shadowing"]
+        all_los = kwargs.pop("all_los",False)
 
         if std:
             shadowing_los = 3
@@ -49,7 +50,11 @@ class PropagationInhOffice(Propagation):
             shadowing_los = 0
             shadowing_nlos = 0
 
-        los_probability = self.get_los_probability(d_2D)
+        if all_los:
+            los_probability = np.ones_like(d_2D)
+        else:
+            los_probability = self.get_los_probability(d_2D)
+
         los_condition = self.get_los_condition(los_probability, indoor)
 
         i_los = np.where(los_condition)[:2]

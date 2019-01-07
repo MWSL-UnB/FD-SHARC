@@ -1,36 +1,30 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Tue Dec 12 17:45:50 2017
-@author: edgar
-"""
-
 from sharc.parameters.parameters_indoor import ParametersIndoor
 from sharc.propagation.propagation import Propagation
 from sharc.propagation.propagation_free_space import PropagationFreeSpace
 from sharc.propagation.propagation_inh_office import PropagationInhOffice
 from sharc.propagation.propagation_building_entry_loss import PropagationBuildingEntryLoss
+from sharc.support.enumerations import StationType
 
 import sys
 import numpy as np
 import matplotlib.pyplot as plt
 from cycler import cycler
 
-class PropagationIndoor(Propagation):
+class PropagationFDIndoor(Propagation):
     """
     This is a wrapper class which can be used for indoor simulations. It
-    calculates the basic path loss between BS's and UE's of the same building,
-    assuming 3 BS's per building. It also includes an additional building
-    entry loss for the outdoor UE's that are served by indoor BS's.
+    calculates the basic BS-BS or UE-UE path loss of the same building.
+    It also includes an additional building entry loss for the outdoor UE's
+    that are served by indoor BS's.
     """
-
-    # For BS and UE that are not in the same building, this value is assigned
+    # For stations that are not in the same building, this value is assigned
     # so this kind of inter-building interference will not be effectivelly
     # taken into account during SINR calculations. This is assumption
     # simplifies the implementation and it is reasonable: intra-building
     # interference is much higher than inter-building interference
     HIGH_PATH_LOSS = 400
 
-    def __init__(self, random_number_gen: np.random.RandomState, param: ParametersIndoor,ue_per_cell):
+    def __init__(self, random_number_gen: np.random.RandomState, param: ParametersIndoor, ue_per_cell):
         super().__init__(random_number_gen)
 
         if param.basic_path_loss == "FSPL":
@@ -45,6 +39,7 @@ class PropagationIndoor(Propagation):
         self.building_class = param.building_class
         self.bs_per_building = param.num_cells
         self.ue_per_building = ue_per_cell*param.num_cells
+        self.num_builds = param.n_rows * param.n_colums
 
     def get_loss(self, *args, **kwargs) -> np.array:
         """
@@ -68,27 +63,39 @@ class PropagationIndoor(Propagation):
         frequency = kwargs["frequency"]
         indoor = kwargs["indoor_stations"]
         shadowing = kwargs["shadowing"]
+        a_type = kwargs["a_type"]
+        b_type = kwargs["b_type"]
 
-        loss = PropagationIndoor.HIGH_PATH_LOSS*np.ones(frequency.shape)
-        iter = int(frequency.shape[0]/self.bs_per_building)
-        for i in range(iter):
-            bi = int(self.bs_per_building*i)
-            bf = int(self.bs_per_building*(i+1))
-            ui = int(self.ue_per_building*i)
-            uf = int(self.ue_per_building*(i+1))
+        if a_type is StationType.IMT_BS and b_type is StationType.IMT_BS:
+            leap_i = self.bs_per_building
+            all_los = True
+            indoor_stas = np.ones_like(distance_2D, dtype=bool)
+        elif a_type is StationType.IMT_UE and b_type is StationType.IMT_UE:
+            leap_i = self.ue_per_building
+            all_los = False
+            indoor_stas = np.logical_and(indoor.transpose(),indoor)
+        else:
+            sys.stderr.write("ERROR\nChannel model FD_INDOOR being used for non FD propagation.")
+            sys.exit(1)
+
+        loss = PropagationFDIndoor.HIGH_PATH_LOSS*np.ones(frequency.shape)
+        for i in range(self.num_builds):
+            ui = int(leap_i*i)
+            uf = int(leap_i*(i+1))
 
             # calculate basic path loss
-            loss[bi:bf,ui:uf] = self.bpl.get_loss(distance_3D = distance_3D[bi:bf,ui:uf],
-                                                  distance_2D = distance_2D[bi:bf,ui:uf],
-                                                  frequency = frequency[bi:bf,ui:uf],
-                                                  indoor = indoor[0,ui:uf],
-                                                  shadowing = shadowing)
+            loss[ui:uf,ui:uf] = self.bpl.get_loss(distance_3D = distance_3D[ui:uf, ui:uf],
+                                                  distance_2D = distance_2D[ui:uf, ui:uf],
+                                                  frequency = frequency[ui:uf, ui:uf],
+                                                  indoor = indoor[0, ui:uf],
+                                                  shadowing = shadowing,
+                                                  all_los=all_los)
 
-            # calculates the additional building entry loss for outdoor UE's
-            # that are served by indoor BS's
-            bel = (~ indoor[0,ui:uf]) * self.bel.get_loss(frequency[bi:bf,ui:uf], elevation[bi:bf,ui:uf], "RANDOM", self.building_class)
+            # calculates the additional building entry loss for outdoor UEs to indoor UEs
+            bel = (~ indoor_stas[ui:uf, ui:uf]) * self.bel.get_loss(frequency[ui:uf, ui:uf], elevation[ui:uf, ui:uf],
+                                                                    "RANDOM", self.building_class)
 
-            loss[bi:bf,ui:uf] = loss[bi:bf,ui:uf] + bel
+            loss[ui:uf, ui:uf] = loss[ui:uf, ui:uf] + bel
 
         return loss
 
@@ -98,31 +105,32 @@ if __name__ == '__main__':
     params.basic_path_loss = "INH_OFFICE"
     params.n_rows = 3
     params.n_colums = 1
-#    params.street_width = 30
     params.ue_indoor_percent = .95
     params.num_cells = 3
     params.building_class = "TRADITIONAL"
 
-    bs_per_building = 3
     ue_per_bs = 3
 
-    num_bs = bs_per_building*params.n_rows*params.n_colums
+    num_bs = params.num_cells*params.n_rows*params.n_colums
     num_ue = num_bs*ue_per_bs
-    distance_2D = 150*np.random.random((num_bs, num_ue))
+
+    # UE-UE path loss
+    distance_2D = 150*np.random.random((num_ue, num_ue))
     frequency = 27000*np.ones(distance_2D.shape)
     indoor = np.array([np.random.rand(num_ue) < params.ue_indoor_percent])
     h_bs = 3*np.ones(num_bs)
     h_ue = 1.5*np.ones(num_ue)
-    distance_3D = np.sqrt(distance_2D**2 + (h_bs[:,np.newaxis] - h_ue)**2)
-    height_diff = np.tile(h_bs, (num_bs, 3)) - np.tile(h_ue, (num_bs, 1))
+    distance_3D = np.sqrt(distance_2D**2 + (h_ue[:,np.newaxis] - h_ue)**2)
+    height_diff = np.tile(h_ue, (num_ue, 1)) - np.tile(h_ue, (num_ue, 1))
     elevation = np.degrees(np.arctan(height_diff/distance_2D))
 
-    propagation_indoor = PropagationIndoor(np.random.RandomState(),params,ue_per_bs)
+    propagation_indoor = PropagationFDIndoor(np.random.RandomState(),params,ue_per_bs)
     loss_indoor = propagation_indoor.get_loss(distance_3D = distance_3D,
                                               distance_2D = distance_2D,
                                               elevation = elevation,
                                               frequency = frequency,
                                               indoor_stations = indoor,
-                                              shadowing = False)
-    print(loss_indoor)
+                                              shadowing = False,
+                                              a_type=StationType.IMT_UE,
+                                              b_type=StationType.IMT_UE)
 
