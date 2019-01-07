@@ -17,7 +17,7 @@ class PropagationImtP1411(Propagation):
 
         self.fspl_to_los_dist = 4
         self.los_dist = 5
-        self.los_to_nlos_dist = 15
+        self.los_to_nlos_dist = 18
         self.nlos_dist = 30
 
         self.fspl_alpha = 2.0
