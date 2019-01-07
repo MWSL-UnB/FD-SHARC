@@ -135,7 +135,7 @@ if __name__ == '__main__':
 
     # Input parameters
     dist = np.linspace(0.1, 100, num=500)
-    freq = 40e6*np.ones_like(dist)
+    freq = 27e6*np.ones_like(dist)
 
     # No shadowing
     shad = False
