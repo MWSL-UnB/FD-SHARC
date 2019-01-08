@@ -716,15 +716,16 @@ class PropagationClearAir(Propagation):
 
     def get_loss(self, *args, **kwargs) -> np.array:
 
-        d_km = np.asarray(kwargs["distance_3D"])*(1e-3)   #Km
+        distance_km = np.asarray(kwargs["distance_3D"])*(1e-3)   #Km
         f = np.asarray(kwargs["frequency"])*(1e-3)  #GHz
         number_of_sectors = kwargs.pop("number_of_sectors",1)
         indoor_stations = kwargs.pop("indoor_stations",1)
         elevation = kwargs["elevation"]
+        bel_enabled = kwargs.pop("bel_enabled",True)
 
         f = np.unique(f)
         if len(f) > 1:
-            error_message = "different frequencies not supported in P619"
+            error_message = "different frequencies not supported in P452"
             raise ValueError(error_message)
 
         es_params =kwargs["es_params"]
@@ -737,9 +738,9 @@ class PropagationClearAir(Propagation):
         N0 = np.asarray(es_params.N0)
         deltaN = np.asarray(es_params.delta_N)
         if es_params.percentage_p == 'RANDOM':
-            p = 50*self.random_number_gen.rand(d_km.size)
+            p = 50*self.random_number_gen.rand(distance_km.shape[1])
         else:
-            p = float(es_params.percentage_p) * np.ones(d_km.size)
+            p = float(es_params.percentage_p) * np.ones(distance_km.shape[1])
 
         tx_lat = es_params.tx_lat
         rx_lat = es_params.rx_lat
@@ -750,171 +751,178 @@ class PropagationClearAir(Propagation):
         # Modify the path according to Section 4.5.4, Step 1  and compute clutter losses
         # consider no obstacles profile
         profile_length = 100
-        num_dists = d_km.size
-        d = np.empty([num_dists, profile_length])
-        for ii in range(num_dists):
-            d[ii, :] = np.linspace(0,d_km[0][ii],profile_length)
+        loss = np.zeros_like(distance_km)
+        for k,dist in enumerate(distance_km):
+            d_km = np.array([dist])
+            d_km[np.isnan(d_km)] = 0.001
+            num_dists = d_km.size
+            d = np.empty([num_dists, profile_length])
+            for ii in range(num_dists):
+                d[ii, :] = np.linspace(0,d_km[0][ii],profile_length)
 
-        h = np.zeros(d.shape)
+            h = np.zeros(d.shape)
 
-        ha_t = []
-        ha_r = []
-        dk_t = []
-        dk_r = []
+            ha_t = []
+            ha_r = []
+            dk_t = []
+            dk_r = []
 
-        # Compute the path profile parameters
-        # Path center latitude
-        phi_path = (tx_lat + rx_lat) / 2
+            # Compute the path profile parameters
+            # Path center latitude
+            phi_path = (tx_lat + rx_lat) / 2
 
-        # Compute dtm - the longest continuous land(inland + coastal) section of the great - circle path(km)
-        # Compute  dlm - the longest continuous inland section of the great-circle path (km)
+            # Compute dtm - the longest continuous land(inland + coastal) section of the great - circle path(km)
+            # Compute  dlm - the longest continuous inland section of the great-circle path (km)
 
-        dtm = np.empty(num_dists)
-        dlm = np.empty(num_dists)
+            dtm = np.empty(num_dists)
+            dlm = np.empty(num_dists)
 
-        zone = np.ones(profile_length) * 2
-        for index in range(num_dists):
+            zone = np.ones(profile_length) * 2
+            for index in range(num_dists):
 
-            zone_r = 12
-            dtm[index] = self.longest_cont_dist(d[index,:], zone, zone_r)
+                zone_r = 12
+                dtm[index] = self.longest_cont_dist(d[index,:], zone, zone_r)
 
-            zone_r = 2
-            dlm[index] = self.longest_cont_dist(d[index,:], zone, zone_r)
+                zone_r = 2
+                dlm[index] = self.longest_cont_dist(d[index,:], zone, zone_r)
 
-        #compute beta0
-        b0 = self.beta0(phi_path, dtm, dlm)
-        [ae, ab] = self.earth_rad_eff(deltaN)
+            #compute beta0
+            b0 = self.beta0(phi_path, dtm, dlm)
+            [ae, ab] = self.earth_rad_eff(deltaN)
 
-        # Compute the path fraction over sea
-        omega = self.path_fraction(d.transpose(), zone, 3)
+            # Compute the path fraction over sea
+            omega = self.path_fraction(d.transpose(), zone, 3)
 
-        # Modify the path according to Section 4.5.4, Step 1 and compute clutter losses
-        # only if not isempty ha_t and ha_r
-        #[dc, hc, zonec, htgc, hrgc, Aht, Ahr] = self.closs_corr(f, d, h, zone, Hte, Hre, ha_t, ha_r, dk_t, dk_r)
+            # Modify the path according to Section 4.5.4, Step 1 and compute clutter losses
+            # only if not isempty ha_t and ha_r
+            #[dc, hc, zonec, htgc, hrgc, Aht, Ahr] = self.closs_corr(f, d, h, zone, Hte, Hre, ha_t, ha_r, dk_t, dk_r)
 
-        Lb = np.empty([1,num_dists])
+            Lb = np.empty([1,num_dists])
 
-        # Effective Earth curvature Ce(km ^ -1)
-        Ce = 1 / ae
+            # Effective Earth curvature Ce(km ^ -1)
+            Ce = 1 / ae
 
-        # Wavelength in meters
-        lamb = 0.3 / f
+            # Wavelength in meters
+            lamb = 0.3 / f
 
-        # Calculate an interpolation factor Fj to take account of the path angular
-        # distance(58)
-        THETA = 0.3
-        KSI = 0.8
+            # Calculate an interpolation factor Fj to take account of the path angular
+            # distance(58)
+            THETA = 0.3
+            KSI = 0.8
 
-        for ii in range(num_dists):
-            [dc, hc, zonec, htg, hrg, Aht, Ahr] = self.closs_corr(f, d[ii,:], h[ii,:], zone, Hte, Hre, ha_t, ha_r, dk_t, dk_r)
-            d[ii,:] = dc
-            h[ii,:] = hc
+            for ii in range(num_dists):
+                [dc, hc, zonec, htg, hrg, Aht, Ahr] = self.closs_corr(f, d[ii,:], h[ii,:], zone, Hte, Hre, ha_t, ha_r, dk_t, dk_r)
+                d[ii,:] = dc
+                h[ii,:] = hc
 
-            [hst, hsr, hstd, hsrd, hte,hre, hm, dlt,
-             dlr, theta_t, theta_r, theta, pathtype] = self.smooth_earth_heights(d[ii,:], h[ii,:], htg, hrg, ae, f)
+                [hst, hsr, hstd, hsrd, hte,hre, hm, dlt,
+                 dlr, theta_t, theta_r, theta, pathtype] = self.smooth_earth_heights(d[ii,:], h[ii,:], htg, hrg, ae, f)
 
-            dtot = d[ii,-1] - d[ii,0]
+                dtot = d[ii,-1] - d[ii,0]
 
-            # Tx and Rx antenna heights above mean sea level amsl(m)
-            hts = hc[0] + htg
-            hrs = hc[-1] + hrg
+                # Tx and Rx antenna heights above mean sea level amsl(m)
+                hts = hc[0] + htg
+                hrs = hc[-1] + hrg
 
-            # Find the intermediate profile point with the highest slope of the line
-            # from the transmitter to the point
+                # Find the intermediate profile point with the highest slope of the line
+                # from the transmitter to the point
 
-            if len(d[ii]) < 4:
-                error_message = "tl_p452: path profile requires at least 4 points."
-                raise ValueError(error_message)
+                if len(d[ii]) < 4:
+                    error_message = "tl_p452: path profile requires at least 4 points."
+                    raise ValueError(error_message)
 
-            di = d[ii,1: -1]
-            hi = h[ii,1: -1]
+                di = d[ii,1: -1]
+                hi = h[ii,1: -1]
 
-            Stim = max((hi + 500 * Ce * di * (dtot - di) - hts) / di)
+                Stim = max((hi + 500 * Ce * di * (dtot - di) - hts) / di)
 
-            # Calculate the slope of the line from transmitter to receiver assuming a
-            # LoS path
-            Str = (hrs - hts) / dtot
+                # Calculate the slope of the line from transmitter to receiver assuming a
+                # LoS path
+                Str = (hrs - hts) / dtot
 
-            # changed the definition for Fj on 15DEC16.
-            # Fj = 1.0 - 0.5 * (1.0 + tanh(3.0 * KSI * (theta - THETA) / THETA))
-            Fj = 1.0 - 0.5 * (1.0 + np.tanh(3.0 * KSI * (Stim - Str) / THETA))
+                # changed the definition for Fj on 15DEC16.
+                # Fj = 1.0 - 0.5 * (1.0 + tanh(3.0 * KSI * (theta - THETA) / THETA))
+                Fj = 1.0 - 0.5 * (1.0 + np.tanh(3.0 * KSI * (Stim - Str) / THETA))
 
-            # Calculate an interpolation factor, Fk, to take account of the great
-            # circle path distance:
-            dsw = 20
-            kappa = 0.5
+                # Calculate an interpolation factor, Fk, to take account of the great
+                # circle path distance:
+                dsw = 20
+                kappa = 0.5
 
-            Fk = 1.0 - 0.5 * (1.0 + np.tanh(3.0 * kappa * (dtot - dsw) / dsw))
+                Fk = 1.0 - 0.5 * (1.0 + np.tanh(3.0 * kappa * (dtot - dsw) / dsw))
 
-            [Lbfsg, Lb0p, Lb0b] = self.pl_los(dtot, f, p[ii], b0[ii], omega[ii], T, Ph, dlt, dlr)
+                [Lbfsg, Lb0p, Lb0b] = self.pl_los(dtot, f, p[ii], b0[ii], omega[ii], T, Ph, dlt, dlr)
 
-            [Ldp, Ld50] = self.dl_p(d[ii], h[ii], hts, hrs, hstd, hsrd, f, omega[ii], p[ii], b0[ii], deltaN)
+                [Ldp, Ld50] = self.dl_p(d[ii], h[ii], hts, hrs, hstd, hsrd, f, omega[ii], p[ii], b0[ii], deltaN)
 
-            # The median basic transmission loss associated with diffraction Eq (43)
-            Lbd50 = Lbfsg + Ld50
+                # The median basic transmission loss associated with diffraction Eq (43)
+                Lbd50 = Lbfsg + Ld50
 
-            # The basic tranmission loss associated with diffraction not exceeded for p % time Eq(44)
-            Lbd = Lb0p + Ldp
+                # The basic tranmission loss associated with diffraction not exceeded for p % time Eq(44)
+                Lbd = Lb0p + Ldp
 
-            # A notional minimum basic transmission loss associated with LoS
-            # propagation and over-sea sub-path diffraction
-            Lminb0p = Lb0p + (1 - omega[ii]) * Ldp
+                # A notional minimum basic transmission loss associated with LoS
+                # propagation and over-sea sub-path diffraction
+                Lminb0p = Lb0p + (1 - omega[ii]) * Ldp
 
-            if p[ii] >= b0[ii]:
-                Fi = inv_cum_norm(p[ii] / 100) / inv_cum_norm(b0[ii] / 100)
-                Lminb0p = Lbd50 + (Lb0b + (1 - omega[ii]) * Ldp - Lbd50) * Fi
+                if p[ii] >= b0[ii]:
+                    Fi = inv_cum_norm(p[ii] / 100) / inv_cum_norm(b0[ii] / 100)
+                    Lminb0p = Lbd50 + (Lb0b + (1 - omega[ii]) * Ldp - Lbd50) * Fi
 
-            # Calculate a notional minimum basic transmission loss associated with LoS
-            # and transhorizon signal enhancements
-            eta = 2.5
+                # Calculate a notional minimum basic transmission loss associated with LoS
+                # and transhorizon signal enhancements
+                eta = 2.5
 
-            Lba = self.tl_anomalous(dtot, dlt, dlr, Dct, Dcr, dlm[ii], hts, hrs, hte, hre, hm, theta_t, theta_r, f,
-                                    p[ii], T, Ph, omega[ii], ae, b0[ii])
+                Lba = self.tl_anomalous(dtot, dlt, dlr, Dct, Dcr, dlm[ii], hts, hrs, hte, hre, hm, theta_t, theta_r, f,
+                                        p[ii], T, Ph, omega[ii], ae, b0[ii])
 
-            Lminbap = eta * np.log(np.exp(Lba / eta) + np.exp(Lb0p / eta))
+                Lminbap = eta * np.log(np.exp(Lba / eta) + np.exp(Lb0p / eta))
 
-            # Calculate a notional basic transmission loss associated with diffraction
-            # and LoS or ducting / layer reflection enhancements
-            Lbda = Lbd
-            if (Lbd >= Lminbap).any():
-                Lbda = Lminbap + (Lbd - Lminbap) * Fk
+                # Calculate a notional basic transmission loss associated with diffraction
+                # and LoS or ducting / layer reflection enhancements
+                Lbda = Lbd
+                if (Lbd >= Lminbap).any():
+                    Lbda = Lminbap + (Lbd - Lminbap) * Fk
 
-            # Calculate a modified basic transmission loss, which takes diffraction and
-            # LoS or ducting / layer - reflection enhancements into account
-            Lbam = Lbda + (Lminb0p - Lbda) * Fj
+                # Calculate a modified basic transmission loss, which takes diffraction and
+                # LoS or ducting / layer - reflection enhancements into account
+                Lbam = Lbda + (Lminb0p - Lbda) * Fj
 
-            # Calculate the basic transmission loss due to troposcatter not exceeded
-            # for any time percantage p
-            Lbs = self.tl_tropo(dtot, theta, f, p[ii], T, Ph, N0, Gt[ii], Gr[ii])
+                # Calculate the basic transmission loss due to troposcatter not exceeded
+                # for any time percantage p
+                Lbs = self.tl_tropo(dtot, theta, f, p[ii], T, Ph, N0, Gt[ii], Gr[ii])
 
-            # Calculate the final transmission loss not exceeded for p % time
-            Lb_pol = -5 * np.log10(10 ** (-0.2 * Lbs) + 10** (-0.2 * Lbam)) + Aht + Ahr
+                # Calculate the final transmission loss not exceeded for p % time
+                Lb_pol = -5 * np.log10(10 ** (-0.2 * Lbs) + 10** (-0.2 * Lbam)) + Aht + Ahr
 
-            if (es_params.polarization).lower() == "horizontal":
-                Lb[0,ii] = Lb_pol[0]
-            elif (es_params.polarization).lower() == "vertical":
-                Lb[0,ii] = Lb_pol[1]
+                if (es_params.polarization).lower() == "horizontal":
+                    Lb[0,ii] = Lb_pol[0]
+                elif (es_params.polarization).lower() == "vertical":
+                    Lb[0,ii] = Lb_pol[1]
+                else:
+                    error_message = "invalid polarization"
+                    raise ValueError(error_message)
+
+            if es_params.clutter_loss:
+                clutter_loss = self.clutter.get_loss(frequency=f * 1000,
+                                                     distance=d_km * 1000,
+                                                     station_type=StationType.FSS_ES)
             else:
-                error_message = "invalid polarization"
-                raise ValueError(error_message)
+                clutter_loss = np.zeros(d_km.shape)
 
-        if es_params.clutter_loss:
-            clutter_loss = self.clutter.get_loss(frequency=f * 1000,
-                                                 distance=d_km * 1000,
-                                                 station_type=StationType.FSS_ES)
-        else:
-            clutter_loss = np.zeros(d_km.shape)
+            if bel_enabled:
+                b_loss = np.transpose(self.building_entry.get_loss(f, elevation))
+                building_loss = b_loss * indoor_stations
+            else:
+                building_loss = 0.0
 
-#        building_loss = self.building_loss * indoor_stations
-        b_loss = np.transpose(self.building_entry.get_loss(f, elevation))
-        building_loss = b_loss * indoor_stations
+            if number_of_sectors > 1:
+                Lb = np.repeat(Lb, number_of_sectors, 1)
+                clutter_loss = np.repeat(clutter_loss, number_of_sectors, 1)
+                building_loss = np.repeat(building_loss, number_of_sectors, 1)
 
-        if number_of_sectors > 1:
-            Lb = np.repeat(Lb, number_of_sectors, 1)
-            clutter_loss = np.repeat(clutter_loss, number_of_sectors, 1)
-            building_loss = np.repeat(building_loss, number_of_sectors, 1)
+            Lb_new = Lb + clutter_loss + building_loss
+            loss[k, :] = Lb_new
 
-        Lb_new = Lb + clutter_loss + building_loss
-
-        return Lb_new
+        return loss
 
