@@ -295,6 +295,7 @@ class Simulation(ABC, Observable):
                                              a_type=station_a.station_type,
                                              b_type=station_b.station_type,
                                              es_params=self.parameters.imt,
+                                             bel_enabled=False,
                                              tx_gain=gain_a,
                                              rx_gain=gain_b)
 

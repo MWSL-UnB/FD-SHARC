@@ -247,7 +247,7 @@ class PropagationClearAir(Propagation):
                  np.sqrt(0.002 * dtot/( lamb * d[ii]*(dtot-d[ii])))
             numax = max(nu)
 
-            kindex = np.nonzero(nu == numax)
+            kindex = np.nonzero(nu == numax)[0]
             lt = kindex[-1] + 1
             dlt = d[lt]
             dlr = dtot - dlt
@@ -751,10 +751,9 @@ class PropagationClearAir(Propagation):
         # Modify the path according to Section 4.5.4, Step 1  and compute clutter losses
         # consider no obstacles profile
         profile_length = 100
-        loss = np.zeros_like(distance_km)
+        loss = np.zeros((distance_km.shape[0], distance_km.shape[1]*number_of_sectors))
         for k,dist in enumerate(distance_km):
             d_km = np.array([dist])
-            d_km[np.isnan(d_km)] = 0.001
             num_dists = d_km.size
             d = np.empty([num_dists, profile_length])
             for ii in range(num_dists):
@@ -797,7 +796,7 @@ class PropagationClearAir(Propagation):
             # only if not isempty ha_t and ha_r
             #[dc, hc, zonec, htgc, hrgc, Aht, Ahr] = self.closs_corr(f, d, h, zone, Hte, Hre, ha_t, ha_r, dk_t, dk_r)
 
-            Lb = np.empty([1,num_dists])
+            Lb = np.nan*np.ones([1,num_dists])
 
             # Effective Earth curvature Ce(km ^ -1)
             Ce = 1 / ae
@@ -814,6 +813,9 @@ class PropagationClearAir(Propagation):
                 [dc, hc, zonec, htg, hrg, Aht, Ahr] = self.closs_corr(f, d[ii,:], h[ii,:], zone, Hte, Hre, ha_t, ha_r, dk_t, dk_r)
                 d[ii,:] = dc
                 h[ii,:] = hc
+
+                if np.isnan(np.max(d[ii, :])):
+                    continue
 
                 [hst, hsr, hstd, hsrd, hte,hre, hm, dlt,
                  dlr, theta_t, theta_r, theta, pathtype] = self.smooth_earth_heights(d[ii,:], h[ii,:], htg, hrg, ae, f)
