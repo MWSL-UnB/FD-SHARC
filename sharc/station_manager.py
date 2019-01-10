@@ -159,6 +159,11 @@ class StationManager(object):
         # Calculate 3D distance
         distance_3D = np.sqrt(np.power(distance_2D, 2) +
                               np.power(station.height - self.height[:,np.newaxis], 2))
+
+        idx0 = np.where(distance_2D == 0)
+        distance_2D[idx0] = np.nan
+        idx0 = np.where(distance_3D == 0)
+        distance_3D[idx0] = np.nan
         
         if return_dist: return distance_2D, distance_3D
             
