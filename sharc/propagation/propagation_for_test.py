@@ -13,7 +13,11 @@ class PropagationForTest(Propagation):
         else:
             d = kwargs["distance_3D"]
 
-        f = kwargs["frequency"]
+        number_of_sectors = kwargs.pop("number_of_sectors", 1)
+
         loss = d
+
+        if number_of_sectors > 1:
+            loss = np.repeat(loss, number_of_sectors, 1)
 
         return loss
