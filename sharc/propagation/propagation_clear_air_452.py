@@ -732,7 +732,10 @@ class PropagationClearAir(Propagation):
         T = np.asarray(es_params.air_temperature)
         Dct = np.asarray(es_params.Dct)
         Dcr = np.asarray(es_params.Dcr)
-        Hte = np.asarray(es_params.Hte)
+        if "imt_height" in kwargs.keys():
+            Hte = np.asarray(kwargs["imt_height"])
+        else:
+            Hte = np.asarray(es_params.Hte)
         Hre = np.asarray(es_params.Hre)
         N0 = np.asarray(es_params.N0)
         deltaN = np.asarray(es_params.delta_N)
