@@ -65,7 +65,6 @@ class PropagationFDIndoorTest(unittest.TestCase):
                                                   a_type=StationType.IMT_BS,
                                                   b_type=StationType.IMT_BS)
 
-        print(loss_indoor)
         self.assertEqual(loss_indoor.shape, (6, 6))
 
 if __name__ == '__main__':
