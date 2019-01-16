@@ -98,6 +98,12 @@ class TopologyMacrocell(Topology):
         # macro cell base stations
         ax.scatter(self.x, self.y, color='k', edgecolor="k", linewidth=4, label="Macro cell")
 
+        # for i in range(len(self.x)):
+        #     az = np.deg2rad(self.azimuth[i])
+        #     x_annotation = self.x[i] + ((r/2) + self.intersite_distance*0.01) * np.cos(az)
+        #     y_annotation = self.y[i] + ((r/2) + self.intersite_distance*0.01) * np.sin(az)
+        #     ax.annotate(i, (x_annotation, y_annotation))
+
 
 if __name__ == '__main__':
     intersite_distance = 500

@@ -566,6 +566,7 @@ class Simulation(ABC, Observable):
         # Plot UE's azimuth
         d = 0.1 * self.topology.cell_radius
         for i in range(len(self.ue.x)):
+            # ax.annotate(i, (self.ue.x[i], self.ue.y[i]))
             plt.plot([self.ue.x[i], self.ue.x[i] + d*math.cos(math.radians(self.ue.azimuth[i]))],
                      [self.ue.y[i], self.ue.y[i] + d*math.sin(math.radians(self.ue.azimuth[i]))],
                      'r-')
