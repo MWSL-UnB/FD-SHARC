@@ -80,6 +80,8 @@ class TopologyMacrocell(Topology):
 
             # In the end, we have to update the number of base stations
             self.num_base_stations = len(self.x)
+            num_sites = self.num_base_stations/3
+            self.site = np.repeat(np.arange(num_sites, dtype=int), 3)
             
             self.indoor = np.zeros(self.num_base_stations, dtype = bool)
                 
@@ -98,11 +100,11 @@ class TopologyMacrocell(Topology):
         # macro cell base stations
         ax.scatter(self.x, self.y, color='k', edgecolor="k", linewidth=4, label="Macro cell")
 
-        # for i in range(len(self.x)):
-        #     az = np.deg2rad(self.azimuth[i])
-        #     x_annotation = self.x[i] + ((r/2) + self.intersite_distance*0.01) * np.cos(az)
-        #     y_annotation = self.y[i] + ((r/2) + self.intersite_distance*0.01) * np.sin(az)
-        #     ax.annotate(i, (x_annotation, y_annotation))
+        for i in range(len(self.x)):
+            az = np.deg2rad(self.azimuth[i])
+            x_annotation = self.x[i] + ((r/2) + self.intersite_distance*0.01) * np.cos(az)
+            y_annotation = self.y[i] + ((r/2) + self.intersite_distance*0.01) * np.sin(az)
+            ax.annotate(self.site[i], (x_annotation, y_annotation))
 
 
 if __name__ == '__main__':

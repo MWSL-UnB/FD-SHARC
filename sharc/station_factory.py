@@ -54,6 +54,7 @@ class StationFactory(object):
         # now we set the coordinates
         imt_base_stations.x = topology.x
         imt_base_stations.y = topology.y
+        imt_base_stations.site = topology.site
         imt_base_stations.azimuth = topology.azimuth
         imt_base_stations.elevation = topology.elevation
         if param.topology == 'INDOOR':

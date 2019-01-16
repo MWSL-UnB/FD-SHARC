@@ -56,6 +56,7 @@ class StationManager(object):
         self.spectral_mask = None
         self.station_type = StationType.NONE
         self.intersite_dist = 0.0
+        self.site = np.empty(n)
 
     def get_station_list(self, id=None) -> list:
         if(id is None):

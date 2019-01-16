@@ -297,7 +297,8 @@ class Simulation(ABC, Observable):
                                              es_params=self.parameters.imt,
                                              bel_enabled=False,
                                              tx_gain=gain_a,
-                                             rx_gain=gain_b)
+                                             rx_gain=gain_b,
+                                             imt_site=station_a.site)
 
             if station_a.station_type is StationType.IMT_BS and station_b.station_type is StationType.IMT_BS:
                 path_loss = np.repeat(path_loss,self.parameters.imt.ue_k,1)

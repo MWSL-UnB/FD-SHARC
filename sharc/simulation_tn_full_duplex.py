@@ -312,7 +312,8 @@ class SimulationTNFullDuplex(Simulation):
                                          b_type=station_b.station_type,
                                          es_params=self.parameters.imt,
                                          tx_gain=gain_a,
-                                         rx_gain=gain_b)
+                                         rx_gain=gain_b,
+                                         imt_site=station_a.site)
 
         if station_a.station_type is StationType.IMT_BS and station_b.station_type is StationType.IMT_BS:
             path_loss = np.repeat(path_loss, idx_range, 1)

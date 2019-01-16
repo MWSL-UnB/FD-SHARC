@@ -119,7 +119,7 @@ class Parameters(object):
         #######################################################################
         # IMT P.452
         #######################################################################
-        if self.imt.bs_bs_channel_model == "P452":
+        if self.imt.bs_bs_channel_model == "IMT_P452":
             self.imt.atmospheric_pressure = config.getfloat("IMT_P452", "atmospheric_pressure")
             self.imt.air_temperature = config.getfloat("IMT_P452", "air_temperature")
             self.imt.N0 = config.getfloat("IMT_P452", "N0")
@@ -133,6 +133,7 @@ class Parameters(object):
             self.imt.rx_lat = config.getfloat("IMT_P452", "rx_lat")
             self.imt.polarization = config.get("IMT_P452", "polarization")
             self.imt.clutter_loss = config.getboolean("IMT_P452", "clutter_loss")
+            self.imt.co_site_bs_loss = config.getfloat("IMT_P452", "co_site_bs_loss")
 
         #######################################################################
         # IMT ANTENNA
