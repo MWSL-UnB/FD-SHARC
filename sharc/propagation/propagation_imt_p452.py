@@ -32,8 +32,9 @@ class PropagationImtP452(Propagation):
                                   tx_gain=tx_g,
                                   rx_gain=rx_g)
 
-        loss[np.isnan(loss)] = es_par.co_site_bs_loss
-
-        np.fill_diagonal(loss, np.nan)
+        for k, ls in enumerate(loss):
+            idx_range = [3 * (k // 3) + m for m in range(3)]
+            loss[k, idx_range] = es_par.co_site_bs_loss
+            loss[k, k] = np.nan
 
         return loss
