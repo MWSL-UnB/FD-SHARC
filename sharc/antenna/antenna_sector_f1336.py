@@ -38,6 +38,7 @@ class AntennaSectorF1336(Antenna):
         
         self.elevation = elevation
         self.azimuth = azimuth
+        self._calculate_rotation_matrix()
 
         self.g_max = par.element_max_g
         self.downtilt_deg = downtilt_deg
@@ -161,27 +162,38 @@ class AntennaSectorF1336(Antenna):
         gain = self.g_max + gain_hor + compression_ratio * self.vertical_pattern(theta)
 
         return gain + self.correction_factor
-    
-    def to_local_coord(self,phi,theta):
-        """
-        Receives theta with reference to z axis, converts it to reference in
-        x axis and converts to local coordinate system
-        """
-        lo_theta = np.ravel(np.array([theta + self.elevation]))
-        lo_phi = np.ravel(np.array([phi - self.azimuth]))
-        
-        lo_theta = 90 - np.ravel(np.mod(np.array([lo_theta]),360))
-        
-        ofb_theta = np.where(np.logical_or(lo_theta < -90,lo_theta > 90))
-        lo_theta[ofb_theta] = np.sign(lo_theta[ofb_theta])*180 - lo_theta[ofb_theta]
-        lo_phi[ofb_theta] = lo_phi[ofb_theta] + 180
-        
-        ofb_phi = np.where(np.logical_or(lo_phi < -180,lo_phi > 180))
-        lo_phi[ofb_phi] = np.mod(lo_phi[ofb_phi],360)
-        ofb_phi = np.where(lo_phi > 180)
-        lo_phi[ofb_phi] = lo_phi[ofb_phi] - 360
-        
+
+    def to_local_coord(self, phi: float, theta: float) -> tuple:
+
+        phi_rad = np.ravel(np.array([np.deg2rad(phi)]))
+        theta_rad = np.ravel(np.array([np.deg2rad(theta)]))
+
+        points = np.array([np.sin(theta_rad) * np.cos(phi_rad),
+                           np.sin(theta_rad) * np.sin(phi_rad),
+                           np.cos(theta_rad)])
+        points = np.ndarray(shape=(3, np.size(points, axis=1)), dtype=float, buffer=points)
+
+        rotated_points = self.rotation_mtx @ points
+
+        lo_phi = np.ravel(np.asarray(np.rad2deg(np.arctan2(rotated_points[1], rotated_points[0]))))
+        lo_theta = 90 - np.ravel(np.asarray(np.rad2deg(np.arccos(rotated_points[2]))))
+
         return lo_phi, lo_theta
+
+    def _calculate_rotation_matrix(self):
+
+        alpha = np.deg2rad(self.azimuth)
+        beta = np.deg2rad(self.elevation)
+
+        Ry = np.array([[np.cos(beta), 0.0, np.sin(beta)],
+                       [0.0, 1.0, 0.0],
+                       [-np.sin(beta), 0.0, np.cos(beta)]])
+        Ry = np.ndarray(shape=(3, 3), dtype=float, buffer=Ry)
+        Rz = np.array([[np.cos(alpha), -np.sin(alpha), 0.0],
+                       [np.sin(alpha), np.cos(alpha), 0.0],
+                       [0.0, 0.0, 1.0]])
+        Rz = np.ndarray(shape=(3, 3), dtype=float, buffer=Rz)
+        self.rotation_mtx = Ry @ np.transpose(Rz)
 
 if __name__ == '__main__':
 
@@ -193,6 +205,7 @@ if __name__ == '__main__':
     param.element_max_g = 15
     param.element_phi_deg_3db = 65
     param.element_theta_deg_3db = 0
+    param.normalization = False
 
     # 0 degrees tilt
     elevation = 0
@@ -215,10 +228,10 @@ if __name__ == '__main__':
     pattern_ver_90deg = np.zeros(theta_v.shape)
     pattern_ver_120deg = np.zeros(theta_v.shape)
 
-    pattern_hor_0deg = antenna.calculate_gain(phi_vec=phi_v,theta_vec=0)
-    pattern_hor_10deg = antenna.calculate_gain(phi_vec=phi_v,theta_vec=10)
-    pattern_hor_30deg = antenna.calculate_gain(phi_vec=phi_v,theta_vec=30)
-    pattern_hor_60deg = antenna.calculate_gain(phi_vec=phi_v,theta_vec=60)
+    pattern_hor_0deg = antenna.calculate_gain(phi_vec=phi_v,theta_vec=0*np.ones_like(phi_v))
+    pattern_hor_10deg = antenna.calculate_gain(phi_vec=phi_v,theta_vec=10*np.ones_like(phi_v))
+    pattern_hor_30deg = antenna.calculate_gain(phi_vec=phi_v,theta_vec=30*np.ones_like(phi_v))
+    pattern_hor_60deg = antenna.calculate_gain(phi_vec=phi_v,theta_vec=60*np.ones_like(phi_v))
 
     plt.figure(1)
     plt.plot(phi_v, pattern_hor_0deg, label = 'elevation = 0 degrees')
@@ -232,11 +245,11 @@ if __name__ == '__main__':
 
     plt.legend()
 
-    pattern_ver_0deg = antenna.calculate_gain(phi_vec=0,theta_vec=theta_v)
-    pattern_ver_30deg = antenna.calculate_gain(phi_vec=30,theta_vec=theta_v)
-    pattern_ver_60deg = antenna.calculate_gain(phi_vec=60,theta_vec=theta_v)
-    pattern_ver_90deg = antenna.calculate_gain(phi_vec=90,theta_vec=theta_v)
-    pattern_ver_120deg = antenna.calculate_gain(phi_vec=120,theta_vec=theta_v)
+    pattern_ver_0deg = antenna.calculate_gain(phi_vec=0*np.ones_like(theta_v),theta_vec=theta_v)
+    pattern_ver_30deg = antenna.calculate_gain(phi_vec=30*np.ones_like(theta_v),theta_vec=theta_v)
+    pattern_ver_60deg = antenna.calculate_gain(phi_vec=60*np.ones_like(theta_v),theta_vec=theta_v)
+    pattern_ver_90deg = antenna.calculate_gain(phi_vec=90*np.ones_like(theta_v),theta_vec=theta_v)
+    pattern_ver_120deg = antenna.calculate_gain(phi_vec=120*np.ones_like(theta_v),theta_vec=theta_v)
 
     plt.figure(2)
     plt.plot(theta_v, pattern_ver_0deg, label='azimuth = 0 degrees')
@@ -255,10 +268,10 @@ if __name__ == '__main__':
     downtilt_deg = -10
     antenna = AntennaSectorF1336(param,downtilt_deg,elevation,azimuth)
 
-    pattern_hor_0deg = antenna.calculate_gain(phi_vec=phi_v,theta_vec=0)
-    pattern_hor_10deg = antenna.calculate_gain(phi_vec=phi_v,theta_vec=10)
-    pattern_hor_30deg = antenna.calculate_gain(phi_vec=phi_v,theta_vec=30)
-    pattern_hor_60deg = antenna.calculate_gain(phi_vec=phi_v,theta_vec=60)
+    pattern_hor_0deg = antenna.calculate_gain(phi_vec=phi_v,theta_vec=0*np.ones_like(phi_v))
+    pattern_hor_10deg = antenna.calculate_gain(phi_vec=phi_v,theta_vec=10*np.ones_like(phi_v))
+    pattern_hor_30deg = antenna.calculate_gain(phi_vec=phi_v,theta_vec=30*np.ones_like(phi_v))
+    pattern_hor_60deg = antenna.calculate_gain(phi_vec=phi_v,theta_vec=60*np.ones_like(phi_v))
 
     plt.figure(3)
     plt.plot(phi_v, pattern_hor_0deg, label='0 degrees')
@@ -271,11 +284,11 @@ if __name__ == '__main__':
     plt.ylabel ('gain (dBi)')
     plt.legend()
 
-    pattern_ver_0deg = antenna.calculate_gain(phi_vec=0,theta_vec=theta_v)
-    pattern_ver_30deg = antenna.calculate_gain(phi_vec=30,theta_vec=theta_v)
-    pattern_ver_60deg = antenna.calculate_gain(phi_vec=60,theta_vec=theta_v)
-    pattern_ver_90deg = antenna.calculate_gain(phi_vec=90,theta_vec=theta_v)
-    pattern_ver_120deg = antenna.calculate_gain(phi_vec=120,theta_vec=theta_v)
+    pattern_ver_0deg = antenna.calculate_gain(phi_vec=0*np.ones_like(theta_v),theta_vec=theta_v)
+    pattern_ver_30deg = antenna.calculate_gain(phi_vec=30*np.ones_like(theta_v),theta_vec=theta_v)
+    pattern_ver_60deg = antenna.calculate_gain(phi_vec=60*np.ones_like(theta_v),theta_vec=theta_v)
+    pattern_ver_90deg = antenna.calculate_gain(phi_vec=90*np.ones_like(theta_v),theta_vec=theta_v)
+    pattern_ver_120deg = antenna.calculate_gain(phi_vec=120*np.ones_like(theta_v),theta_vec=theta_v)
 
     plt.figure(4)
     plt.plot(theta_v, pattern_ver_0deg, label='azimuth = 0 degrees')
@@ -296,7 +309,7 @@ if __name__ == '__main__':
     downtilt_deg = -10
     antenna = AntennaSectorF1336(param,downtilt_deg,elevation,azimuth)
 
-    pattern_hor = antenna.calculate_gain(phi_vec=phi_v,theta_vec=100)
+    pattern_hor = antenna.calculate_gain(phi_vec=phi_v,theta_vec=100*np.ones_like(phi_v))
 
     fig = plt.figure(1)
     ax = fig.add_subplot(1,1,1)
@@ -309,7 +322,7 @@ if __name__ == '__main__':
     fig.savefig("f1336_horizontal.pdf", bbox_inches='tight')
     plt.show(ax)
 
-    pattern_ver = antenna.calculate_gain(phi_vec=0,theta_vec=theta_v)
+    pattern_ver = antenna.calculate_gain(phi_vec=0*np.ones_like(theta_v),theta_vec=theta_v)
 
     fig = plt.figure(2)
     ax = fig.add_subplot(1,1,1)
