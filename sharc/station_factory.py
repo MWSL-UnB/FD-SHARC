@@ -716,7 +716,7 @@ class StationFactory(object):
 
         # randomly choose a cell
         if central_cell:
-            central_cell_indices = np.where((topology.x == 0) & (topology.y == 0))
+            central_cell_indices = np.where((topology.site_x == 0) & (topology.site_y == 0))
             cell = central_cell_indices[0][random_number_gen.random_integers(0, len(central_cell_indices[0]) - 1,
                                                                              num_stas)]
         elif deterministic_cell:
@@ -727,8 +727,8 @@ class StationFactory(object):
             num_bs = topology.num_base_stations
             cell = random_number_gen.random_integers(0, num_bs - 1, num_stas)
 
-        cell_x = topology.x[cell]
-        cell_y = topology.y[cell]
+        cell_x = topology.site_x[cell]
+        cell_y = topology.site_y[cell]
 
         x = x + cell_x + hexagon_radius * np.cos(topology.azimuth[cell] * np.pi / 180)
         y = y + cell_y + hexagon_radius * np.sin(topology.azimuth[cell] * np.pi / 180)

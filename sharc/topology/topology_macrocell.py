@@ -24,7 +24,7 @@ class TopologyMacrocell(Topology):
 
     ALLOWED_NUM_CLUSTERS = [1, 7]
 
-    def __init__(self, intersite_distance: float, num_clusters: int):
+    def __init__(self, intersite_distance: float, num_clusters: int, interantenna_distance = 0.5):
         """
         Constructor method that sets the parameters and already calls the
         calculation methods.
@@ -41,6 +41,10 @@ class TopologyMacrocell(Topology):
         cell_radius = intersite_distance*2/3
         super().__init__(intersite_distance, cell_radius)
         self.num_clusters = num_clusters
+
+        self.site_x = np.empty(0)
+        self.site_y = np.empty(0)
+        self.interantenna_distance = interantenna_distance
 
     def calculate_coordinates(self, random_number_gen=np.random.RandomState()):
         """
@@ -62,24 +66,32 @@ class TopologyMacrocell(Topology):
             y_central = np.array([0, 0, 3*h, 3*h, 0, -3*h,
                              -3*h, 0, 3*h, 6*h, 6*h, 6*h,
                              3*h, 0, -3*h, -6*h, -6*h, -6*h, -3*h])
-            self.x = np.copy(x_central)
-            self.y = np.copy(y_central)
+            self.site_x = np.copy(x_central)
+            self.site_y = np.copy(y_central)
 
             # other clusters are calculated by shifting the central cluster
             if self.num_clusters == 7:
                 x_shift = np.array([7*d/2, -d/2, -4*d, -7*d/2, d/2, 4*d])
                 y_shift = np.array([9*h, 15*h, 6*h, -9*h, -15*h, -6*h])
                 for xs, ys in zip(x_shift, y_shift):
-                    self.x = np.concatenate((self.x, x_central + xs))
-                    self.y = np.concatenate((self.y, y_central + ys))
+                    self.site_x = np.concatenate((self.site_x, x_central + xs))
+                    self.site_y = np.concatenate((self.site_y, y_central + ys))
 
-            self.x = np.repeat(self.x, 3)
-            self.y = np.repeat(self.y, 3)
+            self.x = np.repeat(self.site_x, 3)
+            self.y = np.repeat(self.site_y, 3)
             self.azimuth = np.tile(self.AZIMUTH, 19*self.num_clusters)
             self.elevation = np.tile(self.ELEVATION, 3*19*self.num_clusters)
 
             # In the end, we have to update the number of base stations
             self.num_base_stations = len(self.x)
+
+            for i in range(self.num_base_stations):
+                self.x[i] = self.x[i] + np.cos(np.deg2rad(self.azimuth[i])) * self.interantenna_distance / (2 * np.sqrt(3))
+                self.y[i] = self.y[i] + np.sin(np.deg2rad(self.azimuth[i])) * self.interantenna_distance / (2 * np.sqrt(3))
+
+            self.site_x = np.repeat(self.site_x, 3)
+            self.site_y = np.repeat(self.site_y, 3)
+
             num_sites = self.num_base_stations/3
             self.site = np.repeat(np.arange(num_sites, dtype=int), 3)
             
@@ -104,7 +116,7 @@ class TopologyMacrocell(Topology):
             az = np.deg2rad(self.azimuth[i])
             x_annotation = self.x[i] + ((r/2) + self.intersite_distance*0.01) * np.cos(az)
             y_annotation = self.y[i] + ((r/2) + self.intersite_distance*0.01) * np.sin(az)
-            ax.annotate(self.site[i], (x_annotation, y_annotation))
+            ax.annotate(i, (x_annotation, y_annotation))
 
 
 if __name__ == '__main__':
