@@ -15,6 +15,8 @@ class ResultsCDF(Results):
     
     def __init__(self, out_dir):
         super().__init__(out_dir)
+
+        os.makedirs(self.output_directory, exist_ok=True)
         
     def generate_plot_list(self, *args):
         n_bins = args[0]
@@ -573,4 +575,3 @@ class ResultsCDF(Results):
                        fmt="%.5f", delimiter="\t", header=header_text, 
                        newline=os.linesep)
 
-      

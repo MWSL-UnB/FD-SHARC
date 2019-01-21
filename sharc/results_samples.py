@@ -10,7 +10,7 @@ from sharc.results import Results
 
 import numpy as np
 from os.path import join
-from os import fdopen, remove, linesep, listdir
+from os import fdopen, remove, listdir, makedirs
 from tempfile import mkstemp
 from shutil import move
 
@@ -18,6 +18,8 @@ class ResultsSamples(Results):
     
     def __init__(self, out_dir):
         super().__init__(out_dir)
+
+        makedirs(self.output_directory, exist_ok=True)
         
         # Remove old result files to overwrite them
         out_dir_files = listdir(out_dir)
