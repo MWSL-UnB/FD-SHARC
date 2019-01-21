@@ -41,10 +41,10 @@ class SimulationBDFullDuplex(Simulation):
 
         self.propagation_imt = PropagationFactory.create_propagation(self.parameters.imt.channel_model, self.parameters,
                                                                      random_number_gen)
-        self.propagation_imt_bs_bs = PropagationFactory.create_propagation(self.parameters.imt.bs_bs_channel_model,
-                                                                           self.parameters, random_number_gen)
-        self.propagation_imt_ue_ue = PropagationFactory.create_propagation(self.parameters.imt.ue_ue_channel_model,
-                                                                           self.parameters, random_number_gen)
+        # self.propagation_imt_bs_bs = PropagationFactory.create_propagation(self.parameters.imt.bs_bs_channel_model,
+        #                                                                    self.parameters, random_number_gen)
+        # self.propagation_imt_ue_ue = PropagationFactory.create_propagation(self.parameters.imt.ue_ue_channel_model,
+        #                                                                    self.parameters, random_number_gen)
         self.propagation_system = PropagationFactory.create_propagation(self.param_system.channel_model,
                                                                         self.parameters,
                                                                         random_number_gen)
@@ -81,14 +81,14 @@ class SimulationBDFullDuplex(Simulation):
                                                               self.propagation_imt)
 
         # UE to UE coupling loss
-        self.coupling_loss_imt_ue_ue = self.calculate_coupling_loss(self.ue,
-                                                                    self.ue,
-                                                                    self.propagation_imt_ue_ue)
-
-        # BS to BS coupling loss
-        self.coupling_loss_imt_bs_bs = self.calculate_coupling_loss(self.bs,
-                                                                    self.bs,
-                                                                    self.propagation_imt_bs_bs)
+        # self.coupling_loss_imt_ue_ue = self.calculate_coupling_loss(self.ue,
+        #                                                             self.ue,
+        #                                                             self.propagation_imt_ue_ue)
+        #
+        # # BS to BS coupling loss
+        # self.coupling_loss_imt_bs_bs = self.calculate_coupling_loss(self.bs,
+        #                                                             self.bs,
+        #                                                             self.propagation_imt_bs_bs)
 
         # Scheduler which divides the band equally among BSs and UEs
         self.scheduler()
@@ -108,7 +108,7 @@ class SimulationBDFullDuplex(Simulation):
         else:
             # Execute this piece of code if IMT generates interference into
             # the other system
-            self.calculate_sinr()
+            # self.calculate_sinr()
             if self.parameters.general.system != "NONE":
                 self.calculate_external_interference()
             # self.calculate_external_degradation()
@@ -344,13 +344,15 @@ class SimulationBDFullDuplex(Simulation):
         """
         Calculates interference that IMT system generates on other system
         """
+        polarization_loss = 3.0
+
         ### Downlink & Uplink
         self.coupling_loss_imt_bs_system = self.calculate_coupling_loss(self.system,
                                                                         self.bs,
-                                                                        self.propagation_system)
+                                                                        self.propagation_system) + polarization_loss
         self.coupling_loss_imt_ue_system = self.calculate_coupling_loss(self.system,
                                                                         self.ue,
-                                                                        self.propagation_system)
+                                                                        self.propagation_system) + polarization_loss
 
         # calculate N
         self.system.thermal_noise = \

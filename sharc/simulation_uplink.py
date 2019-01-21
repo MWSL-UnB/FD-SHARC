@@ -176,6 +176,8 @@ class SimulationUplink(Simulation):
         """
         Calculates interference that IMT system generates on other system
         """
+        polarization_loss = 3.0
+
         if self.co_channel:
             self.coupling_loss_imt_system = self.calculate_coupling_loss(self.system, 
                                                                      self.ue,
