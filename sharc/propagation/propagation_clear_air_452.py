@@ -247,7 +247,7 @@ class PropagationClearAir(Propagation):
                  np.sqrt(0.002 * dtot/( lamb * d[ii]*(dtot-d[ii])))
             numax = max(nu)
 
-            kindex = np.nonzero(nu == numax)
+            kindex = np.nonzero(nu == numax)[0]
             lt = kindex[-1] + 1
             dlt = d[lt]
             dlr = dtot - dlt
@@ -721,6 +721,7 @@ class PropagationClearAir(Propagation):
         number_of_sectors = kwargs.pop("number_of_sectors",1)
         indoor_stations = kwargs.pop("indoor_stations",1)
         elevation = kwargs["elevation"]
+        bel_enabled = kwargs.pop("bel_enabled",True)
 
         f = np.unique(f)
         if len(f) > 1:
@@ -909,8 +910,11 @@ class PropagationClearAir(Propagation):
             clutter_loss = np.zeros(d_km.shape)
 
 #        building_loss = self.building_loss * indoor_stations
-        b_loss = np.transpose(self.building_entry.get_loss(f, elevation))
-        building_loss = b_loss * indoor_stations
+        if bel_enabled:
+            b_loss = np.transpose(self.building_entry.get_loss(f, elevation))
+            building_loss = b_loss * indoor_stations
+        else:
+            building_loss = np.zeros_like(Lb)
 
         if number_of_sectors > 1:
             Lb = np.repeat(Lb, number_of_sectors, 1)

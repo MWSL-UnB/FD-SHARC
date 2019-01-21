@@ -273,10 +273,20 @@ class Simulation(ABC, Observable):
                 d_2D = station_a.get_distance_to(station_b)
                 d_3D = station_a.get_3d_distance_to(station_b)
             freq = self.parameters.imt.frequency
-            
+
+            # define antenna gains
+            gain_a = self.calculate_gains(station_a, station_b)
+            if station_a.station_type is StationType.IMT_BS and station_b.station_type is StationType.IMT_BS:
+                # BS <-> BS
+                gain_b = np.zeros_like(gain_a)
+                for k in range(gain_b.shape[0]):
+                    gain_b[k,:] = np.ravel(gain_a[:,np.arange(k*self.parameters.imt.ue_k,(k+1)*self.parameters.imt.ue_k)])
+            else:
+                gain_b = np.transpose(self.calculate_gains(station_b, station_a))
+
             path_loss = propagation.get_loss(distance_3D=d_3D,
                                              distance_2D=d_2D,
-                                             frequency=freq*np.ones(d_2D.shape),
+                                             frequency=freq * np.ones(d_2D.shape),
                                              indoor_stations=np.tile(station_b.indoor, (station_a.num_stations, 1)),
                                              bs_height=station_a.height,
                                              ue_height=station_b.height,
@@ -284,17 +294,15 @@ class Simulation(ABC, Observable):
                                              shadowing=self.parameters.imt.shadowing,
                                              line_of_sight_prob=self.parameters.imt.line_of_sight_prob,
                                              a_type=station_a.station_type,
-                                             b_type=station_b.station_type)
-            # define antenna gains
-            gain_a = self.calculate_gains(station_a, station_b)
+                                             b_type=station_b.station_type,
+                                             es_params=self.parameters.imt,
+                                             bel_enabled=False,
+                                             tx_gain=gain_a,
+                                             rx_gain=gain_b,
+                                             imt_site=station_a.site)
+
             if station_a.station_type is StationType.IMT_BS and station_b.station_type is StationType.IMT_BS:
-                # BS <-> BS
                 path_loss = np.repeat(path_loss,self.parameters.imt.ue_k,1)
-                gain_b = np.zeros_like(gain_a)
-                for k in range(gain_b.shape[0]):
-                    gain_b[k,:] = np.ravel(gain_a[:,np.arange(k*self.parameters.imt.ue_k,(k+1)*self.parameters.imt.ue_k)])
-            else:
-                gain_b = np.transpose(self.calculate_gains(station_b, station_a))
 
         # collect IMT BS and UE antenna gain and path loss samples
         if station_a.station_type is StationType.IMT_BS and station_b.station_type is StationType.IMT_UE:
@@ -560,6 +568,7 @@ class Simulation(ABC, Observable):
         # Plot UE's azimuth
         d = 0.1 * self.topology.cell_radius
         for i in range(len(self.ue.x)):
+            # ax.annotate(i, (self.ue.x[i], self.ue.y[i]))
             plt.plot([self.ue.x[i], self.ue.x[i] + d*math.cos(math.radians(self.ue.azimuth[i]))],
                      [self.ue.y[i], self.ue.y[i] + d*math.sin(math.radians(self.ue.azimuth[i]))],
                      'r-')

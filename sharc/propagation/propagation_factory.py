@@ -24,6 +24,7 @@ from sharc.propagation.propagation_fd_indoor import PropagationFDIndoor
 from sharc.propagation.propagation_hdfss import PropagationHDFSS
 from sharc.propagation.propagation_imt_p1411 import PropagationImtP1411
 from sharc.propagation.propagation_imt_p1411_los import PropagationImtP1411Los
+from sharc.propagation.propagation_imt_p452 import PropagationImtP452
 
 class PropagationFactory(object):
 
@@ -57,6 +58,8 @@ class PropagationFactory(object):
             return PropagationImtP1411(random_number_gen)
         elif channel_model == "IMT_P1411_LOS":
             return PropagationImtP1411Los(random_number_gen)
+        elif channel_model == "IMT_P452":
+            return PropagationImtP452(random_number_gen)
         elif channel_model == "NONE":
             return None
         else:

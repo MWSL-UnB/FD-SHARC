@@ -54,6 +54,7 @@ class StationFactory(object):
         # now we set the coordinates
         imt_base_stations.x = topology.x
         imt_base_stations.y = topology.y
+        imt_base_stations.site = topology.site
         imt_base_stations.azimuth = topology.azimuth
         imt_base_stations.elevation = topology.elevation
         if param.topology == 'INDOOR':
@@ -157,10 +158,11 @@ class StationFactory(object):
                 sys.exit(1)
 
             [ue_x, ue_y, theta, distance] = StationFactory.get_random_position(num_ue, topology, random_number_gen,
-                                                                               param.minimum_separation_distance_bs_ue )
+                                                                               param.minimum_separation_distance_bs_ue,
+                                                                               deterministic_cell=True)
             psi = np.degrees(np.arctan((param.bs_height - param.ue_height) / distance))
 
-            imt_ue.azimuth = (azimuth + theta + np.pi/2)
+            imt_ue.azimuth = azimuth + theta
             imt_ue.elevation = elevation + psi
 
 
@@ -685,7 +687,7 @@ class StationFactory(object):
     @staticmethod
     def get_random_position( num_stas: int, topology: Topology,
                              random_number_gen: np.random.RandomState,
-                             min_dist_to_bs = 0, central_cell = False ):
+                             min_dist_to_bs = 0, central_cell = False, deterministic_cell = False):
         hexagon_radius = topology.intersite_distance / 3
 
         min_dist_ok = False
@@ -714,15 +716,19 @@ class StationFactory(object):
 
         # randomly choose a cell
         if central_cell:
-            central_cell_indices = np.where((topology.x == 0) & (topology.y == 0))
+            central_cell_indices = np.where((topology.site_x == 0) & (topology.site_y == 0))
             cell = central_cell_indices[0][random_number_gen.random_integers(0, len(central_cell_indices[0]) - 1,
                                                                              num_stas)]
+        elif deterministic_cell:
+            num_bs = topology.num_base_stations
+            stas_per_cell = num_stas/num_bs
+            cell = np.repeat(np.arange(num_bs, dtype=int), stas_per_cell)
         else:
             num_bs = topology.num_base_stations
             cell = random_number_gen.random_integers(0, num_bs - 1, num_stas)
 
-        cell_x = topology.x[cell]
-        cell_y = topology.y[cell]
+        cell_x = topology.site_x[cell]
+        cell_y = topology.site_y[cell]
 
         x = x + cell_x + hexagon_radius * np.cos(topology.azimuth[cell] * np.pi / 180)
         y = y + cell_y + hexagon_radius * np.sin(topology.azimuth[cell] * np.pi / 180)
@@ -731,7 +737,7 @@ class StationFactory(object):
         y = list(y)
 
         # calculate UE azimuth wrt serving BS
-        theta = np.arctan2(y - cell_y, x - cell_x)
+        theta = np.rad2deg(np.arctan2(y - cell_y, x - cell_x) + np.pi)
 
         # calculate elevation angle
         # psi is the vertical angle of the UE wrt the serving BS

@@ -117,6 +117,25 @@ class Parameters(object):
         self.imt.BOLTZMANN_CONSTANT      = config.getfloat("IMT", "BOLTZMANN_CONSTANT")
 
         #######################################################################
+        # IMT P.452
+        #######################################################################
+        if self.imt.bs_bs_channel_model == "IMT_P452":
+            self.imt.atmospheric_pressure = config.getfloat("IMT_P452", "atmospheric_pressure")
+            self.imt.air_temperature = config.getfloat("IMT_P452", "air_temperature")
+            self.imt.N0 = config.getfloat("IMT_P452", "N0")
+            self.imt.delta_N = config.getfloat("IMT_P452", "delta_N")
+            self.imt.percentage_p = config.get("IMT_P452", "percentage_p")
+            self.imt.Dct = config.getfloat("IMT_P452", "Dct")
+            self.imt.Dcr = config.getfloat("IMT_P452", "Dcr")
+            self.imt.Hte = config.getfloat("IMT_P452", "Hte")
+            self.imt.Hre = config.getfloat("IMT_P452", "Hre")
+            self.imt.tx_lat = config.getfloat("IMT_P452", "tx_lat")
+            self.imt.rx_lat = config.getfloat("IMT_P452", "rx_lat")
+            self.imt.polarization = config.get("IMT_P452", "polarization")
+            self.imt.clutter_loss = config.getboolean("IMT_P452", "clutter_loss")
+            self.imt.co_site_bs_loss = config.getfloat("IMT_P452", "co_site_bs_loss")
+
+        #######################################################################
         # IMT ANTENNA
         #######################################################################
         self.antenna_imt.bs_antenna_type        = config.get("IMT_ANTENNA", "bs_antenna_type")

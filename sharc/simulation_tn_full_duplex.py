@@ -250,34 +250,21 @@ class SimulationTNFullDuplex(Simulation):
         if station_a.station_type is StationType.IMT_BS and \
            station_b.station_type is StationType.IMT_UE and \
            self.parameters.imt.topology == "INDOOR":
-               elevation_angles = np.transpose(station_b.get_elevation(station_a))
+            elevation_angles = np.transpose(station_b.get_elevation(station_a))
         else:
             elevation_angles = None
             
         if self.wrap_around_enabled:
-            d_2D, d_3D = station_a.get_dist_angles_wrap_around(station_b,
-                                                                   return_dist=True)
+            d_2D, d_3D = station_a.get_dist_angles_wrap_around(station_b, return_dist=True)
         else:
             d_2D = station_a.get_distance_to(station_b)
             d_3D = station_a.get_3d_distance_to(station_b)
         freq = self.parameters.imt.frequency
-            
-        path_loss = propagation.get_loss(distance_3D=d_3D,
-                                         distance_2D=d_2D,
-                                         frequency=freq*np.ones(d_2D.shape),
-                                         indoor_stations=np.tile(station_b.indoor, (station_a.num_stations, 1)),
-                                         bs_height=station_a.height,
-                                         ue_height=station_b.height,
-                                         elevation=elevation_angles,
-                                         shadowing=self.parameters.imt.shadowing,
-                                         line_of_sight_prob=self.parameters.imt.line_of_sight_prob,
-                                         a_type=station_a.station_type,
-                                         b_type=station_b.station_type)
+
         # define antenna gains
         if station_a.station_type is StationType.IMT_BS and station_b.station_type is StationType.IMT_BS:
             # Path loss repeat
             idx_range = self.parameters.imt.ue_k*self.parameters.imt.ue_k_m
-            path_loss = np.repeat(path_loss,idx_range,1)
             # Calculate and manipulate gains
             all_gains = self.calculate_imt_gains(station_a, station_b)
             gain_a = all_gains
@@ -311,6 +298,25 @@ class SimulationTNFullDuplex(Simulation):
         else:
             gain_a = self.calculate_imt_gains(station_a, station_b)
             gain_b = np.transpose(self.calculate_imt_gains(station_b, station_a))
+
+        path_loss = propagation.get_loss(distance_3D=d_3D,
+                                         distance_2D=d_2D,
+                                         frequency=freq * np.ones(d_2D.shape),
+                                         indoor_stations=np.tile(station_b.indoor, (station_a.num_stations, 1)),
+                                         bs_height=station_a.height,
+                                         ue_height=station_b.height,
+                                         elevation=elevation_angles,
+                                         shadowing=self.parameters.imt.shadowing,
+                                         line_of_sight_prob=self.parameters.imt.line_of_sight_prob,
+                                         a_type=station_a.station_type,
+                                         b_type=station_b.station_type,
+                                         es_params=self.parameters.imt,
+                                         tx_gain=gain_a,
+                                         rx_gain=gain_b,
+                                         imt_site=station_a.site)
+
+        if station_a.station_type is StationType.IMT_BS and station_b.station_type is StationType.IMT_BS:
+            path_loss = np.repeat(path_loss, idx_range, 1)
 
         # collect IMT BS and UE antenna gain and path loss samples
         if station_a.station_type is StationType.IMT_BS and station_b.station_type is StationType.IMT_UE:
