@@ -563,11 +563,10 @@ class SimulationTNFullDuplex(Simulation):
         """
         Calculates interference that IMT system generates on other system
         """
-        polarization_loss = 3.0
         ### Downlink & Uplink
         self.coupling_loss_imt_bs_system = self.calculate_coupling_loss(self.system, 
                                                                         self.bs,
-                                                                        self.propagation_system) + polarization_loss
+                                                                        self.propagation_system)
         self.coupling_loss_imt_ue_system = self.calculate_coupling_loss(self.system, 
                                                                         self.ue,
                                                                         self.propagation_system)

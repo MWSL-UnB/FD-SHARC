@@ -352,7 +352,7 @@ class SimulationBDFullDuplex(Simulation):
                                                                         self.propagation_system) + polarization_loss
         self.coupling_loss_imt_ue_system = self.calculate_coupling_loss(self.system,
                                                                         self.ue,
-                                                                        self.propagation_system) + polarization_loss
+                                                                        self.propagation_system)
 
         # calculate N
         self.system.thermal_noise = \
