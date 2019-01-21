@@ -225,7 +225,7 @@ class SimulationAdjacentTest(unittest.TestCase):
         self.simulation.calculate_external_interference()
 
         # check coupling loss
-        polarization_loss = 3.
+        polarization_loss = 0
         coupling_loss_imt_system_adj = np.array([203.52-51-1, 203.52-51-1, 203.52-51-2, 203.52-51-2]) \
                                        + polarization_loss
         npt.assert_allclose(self.simulation.coupling_loss_imt_system_adjacent,

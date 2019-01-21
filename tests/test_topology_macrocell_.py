@@ -93,8 +93,8 @@ class TopologyMacrocellTest(unittest.TestCase):
                          866.02, 0, -866.02, -1732.05, -1732.05, -1732.05, -866.02]), num_bs_per_site)
         az_ref = np.tile([60, 180, 300], num_sites)
         
-        npt.assert_allclose(topology.x, x_ref, atol=1e-2)
-        npt.assert_allclose(topology.y, y_ref, atol=1e-2)
+        npt.assert_allclose(topology.x, x_ref, atol=0.5)
+        npt.assert_allclose(topology.y, y_ref, atol=0.5)
         npt.assert_allclose(topology.azimuth, az_ref, atol=1e-2)
         
         # change intersite distance and check new cell radius and coordinates
@@ -117,8 +117,8 @@ class TopologyMacrocellTest(unittest.TestCase):
                          433.01, 0, -433.01, -866.02, -866.02, -866.02, -433.01]), num_bs_per_site)
         az_ref = np.tile([60, 180, 300], num_sites)
         
-        npt.assert_allclose(topology.x, x_ref, atol=1e-2)
-        npt.assert_allclose(topology.y, y_ref, atol=1e-2)
+        npt.assert_allclose(topology.x, x_ref, atol=0.5)
+        npt.assert_allclose(topology.y, y_ref, atol=0.5)
         npt.assert_allclose(topology.azimuth, az_ref, atol=1e-2)      
 
 
@@ -132,4 +132,3 @@ class TopologyMacrocellTest(unittest.TestCase):
         
 if __name__ == '__main__':
     unittest.main()
-        

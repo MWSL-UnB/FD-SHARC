@@ -307,7 +307,7 @@ class SimulationDownlinkTest(unittest.TestCase):
         # check coupling loss
         # 4 values because we have 2 BS * 2 beams for each base station. 
         path_loss_imt_system = 203.52
-        polarization_loss = 3
+        polarization_loss = 0
         sat_antenna_gain = 51
         bs_antenna_gain = np.array([1, 2])
         coupling_loss_imt_system = path_loss_imt_system - sat_antenna_gain \
@@ -442,7 +442,7 @@ class SimulationDownlinkTest(unittest.TestCase):
         self.simulation.calculate_external_interference()
 
         # check coupling loss from IMT_BS to FSS_ES
-        polarization_loss = 3.
+        polarization_loss = 0
         feeder_loss = 3
 
         coupling_loss_imt_system = np.array([118.47-50-1,  118.47-50-1,  119.29-50-2,  119.29-50-2]) + polarization_loss
