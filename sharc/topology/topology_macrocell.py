@@ -24,7 +24,7 @@ class TopologyMacrocell(Topology):
 
     ALLOWED_NUM_CLUSTERS = [1, 7]
 
-    def __init__(self, intersite_distance: float, num_clusters: int, interantenna_distance = 0.5):
+    def __init__(self, intersite_distance: float, num_clusters: int, interantenna_distance = 1):
         """
         Constructor method that sets the parameters and already calls the
         calculation methods.
