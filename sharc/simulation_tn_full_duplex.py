@@ -637,7 +637,7 @@ class SimulationTNFullDuplex(Simulation):
         total_bs_tput = 0
         for bs in bs_active:
             ue = self.link[bs]
-            ue_dl = self.link_ul[bs]
+            ue_dl = self.link_dl[bs]
             ue_ul = self.link_ul[bs]
             self.results.imt_path_loss.extend(self.path_loss_imt[bs,ue])
             self.results.imt_coupling_loss.extend(self.coupling_loss_imt[bs,ue])
