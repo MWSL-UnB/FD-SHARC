@@ -273,22 +273,22 @@ class SimulationTNFullDuplex(Simulation):
             station_a_active = np.where(station_a.active)[0]
             station_b_active = np.where(station_b.active)[0]
             # loop in the current BS
-            for k in station_a_active:
+            idx_range = self.parameters.imt.ue_k*self.parameters.imt.ue_k_m
+            for k in station_b_active:
                 # loop in the other BS
-                for m in station_b_active:
-                    station_b_beams = [n for n in range(m*self.parameters.imt.ue_k*self.parameters.imt.ue_k_m,
-                                                        (m+1)*self.parameters.imt.ue_k*self.parameters.imt.ue_k_m)]
+                for m in station_a_active:
+                    station_b_beams = [n for n in range(m * idx_range, (m+1) * idx_range)]
 
                     station_a_gains = list()
                     # current BS beams
-                    for beam_a in self.bs_beam_rbs[k]:
+                    for beam_b in self.bs_beam_rbs[k]:
                         associated = False
                         # other BS beams
-                        for b_num, beam_b in enumerate(self.bs_beam_rbs[m]):
+                        for b_num, beam_a in enumerate(self.bs_beam_rbs[m]):
                             # if the beams are associated
                             if beam_a[1] == beam_b[1] and beam_a[0] != beam_b[0]:
                                 # use its gain
-                                station_a_gains.append(all_gains[m, b_num])
+                                station_a_gains.append(all_gains[m, k*idx_range + b_num])
                                 associated = True
                         # if no beams are associated, use token gain 0.0 instead
                         if not associated:
