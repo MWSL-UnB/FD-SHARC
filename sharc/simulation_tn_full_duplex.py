@@ -512,7 +512,8 @@ class SimulationTNFullDuplex(Simulation):
                             np.power(10, 0.1*self.bs.self_interference[bs]))
                 
             # calculate SNR and SINR
-            self.bs.sinr[bs] = self.bs.rx_power[bs] - self.bs.total_interference[bs]
+            self.bs.sinr[bs] = self.bs.rx_power[bs] - \
+                               self.bs.total_interference[bs][np.array(self.ue_beam_rbs[ue],dtype=int)]
             self.bs.snr[bs] = self.bs.rx_power[bs] - self.bs.thermal_noise[bs]
 
         
