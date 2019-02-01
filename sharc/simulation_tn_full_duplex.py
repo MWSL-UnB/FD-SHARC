@@ -156,9 +156,16 @@ class SimulationTNFullDuplex(Simulation):
             self.link_ul[bs][ul_ues] = np.array(self.link[bs][K:], dtype=int)[ul_ues]
             
             # delete UEs that are not active
-            num_ul_ues = np.count_nonzero(self.link_ul[bs] != -1)
-            num_ues = (len(self.link_dl[bs]) + num_ul_ues)
-            del self.link[bs][num_ues:]
+            active_ues = []
+            for k, ue_num in enumerate(self.link[bs]):
+                if (ue_num in self.link_dl[bs]) or (ue_num in self.link_ul[bs]):
+                    active_ues.append(ue_num)
+            self.link[bs] = active_ues
+            #
+            #
+            # num_ul_ues = np.count_nonzero(self.link_ul[bs] != -1)
+            # num_ues = (len(self.link_dl[bs]) + num_ul_ues)
+
 
             # define UE RB group
             for k, ue in enumerate(self.link_dl[bs]):
@@ -721,23 +728,24 @@ class SimulationTNFullDuplex(Simulation):
 
             self.results.imt_dl_tx_power.extend(self.bs.tx_power[bs].tolist())
             self.results.imt_dl_rx_power.extend(self.ue.rx_power[ue].tolist())
-            self.results.imt_dl_sinr.extend(self.ue.sinr[ue].tolist())
-            self.results.imt_dl_snr.extend(self.ue.snr[ue].tolist())
-            self.results.imt_dl_ue_total_interf.extend(self.ue.total_interference[ue].tolist())
-            self.results.imt_dl_ue_self_interf.extend(self.ue.self_interference[ue].tolist())
-            self.results.imt_ue_interf_from_ue.extend(self.ue.interference_from_ue[ue].tolist())
-            self.results.imt_ue_interf_from_bs.extend(self.ue.interference_from_bs[ue].tolist())
-            self.results.imt_ue_thermal_noise.extend(self.ue.thermal_noise[ue].tolist())
+            self.results.imt_dl_sinr.extend(self.ue.sinr[ue_dl].tolist())
+            self.results.imt_dl_snr.extend(self.ue.snr[ue_dl].tolist())
+            self.results.imt_dl_ue_total_interf.extend(self.ue.total_interference[ue_dl].tolist())
+            self.results.imt_dl_ue_self_interf.extend(self.ue.self_interference[ue_dl].tolist())
+            self.results.imt_ue_interf_from_ue.extend(self.ue.interference_from_ue[ue_dl].tolist())
+            self.results.imt_ue_interf_from_bs.extend(self.ue.interference_from_bs[ue_dl].tolist())
+            self.results.imt_ue_thermal_noise.extend(self.ue.thermal_noise[ue_dl].tolist())
 
             self.results.imt_ul_tx_power.extend(self.ue.tx_power[ue_ul].tolist())
             self.results.imt_ul_rx_power.extend(self.bs.rx_power[bs].tolist())
             self.results.imt_ul_sinr.extend(self.bs.sinr[bs].tolist())
             self.results.imt_ul_snr.extend(self.bs.snr[bs].tolist())
-            self.results.imt_ul_bs_total_interf.extend(self.bs.total_interference[bs].tolist())
-            self.results.imt_ul_bs_self_interf.extend(self.bs.self_interference[bs].tolist())
-            self.results.imt_bs_interf_from_ue.extend(self.bs.interference_from_ue[bs].tolist())
-            self.results.imt_bs_interf_from_bs.extend(self.bs.interference_from_bs[bs].tolist())
-            self.results.imt_bs_thermal_noise.extend([self.bs.thermal_noise[bs]])
+            if len(ue_ul):
+                self.results.imt_ul_bs_total_interf.extend(self.bs.total_interference[bs].tolist())
+                self.results.imt_ul_bs_self_interf.extend(self.bs.self_interference[bs].tolist())
+                self.results.imt_bs_interf_from_ue.extend(self.bs.interference_from_ue[bs].tolist())
+                self.results.imt_bs_interf_from_bs.extend(self.bs.interference_from_bs[bs].tolist())
+                self.results.imt_bs_thermal_noise.extend([self.bs.thermal_noise[bs]])
             
         self.results.imt_total_tput.extend([total_ue_tput + total_bs_tput])
         self.results.imt_dl_total_tput.extend([total_ue_tput])
