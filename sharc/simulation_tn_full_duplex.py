@@ -8,7 +8,7 @@ Created on Fri Sep  7 10:27:04 2018
 from itertools import compress
 import numpy as np
 import math
-from warnings import filterwarnings
+from warnings import filterwarnings, catch_warnings
 
 from sharc.support.enumerations import StationType
 from sharc.station_manager import StationManager
@@ -33,6 +33,7 @@ class SimulationTNFullDuplex(Simulation):
         self.system_dl_inr = np.empty(0)
         self.bs_to_ue_beam_idx = np.empty(0)
         self.ue_beam_rbs = np.empty(0)
+        self.ue_directions = list()
         self.bs_beam_rbs = dict()
 
         filterwarnings("ignore", "invalid value encountered in", RuntimeWarning)
@@ -43,6 +44,7 @@ class SimulationTNFullDuplex(Simulation):
         num_ue = num_bs * self.parameters.imt.ue_k * self.parameters.imt.ue_k_m
         self.bs_to_ue_beam_idx = -1.0 * np.ones(num_ue, dtype=int)
         self.ue_beam_rbs = -1.0 * np.ones(num_ue, dtype=int)
+        self.ue_directions = ['' for k in range(num_ue)]
         self.bs_beam_rbs = dict()
 
     def snapshot(self, *args, **kwargs):
@@ -151,36 +153,26 @@ class SimulationTNFullDuplex(Simulation):
             self.link_dl[bs] = self.link[bs][:K]
             
             # select up to K UL UEs
-            self.link_ul[bs] = np.repeat(-1, len(self.link_dl[bs]))
             ul_ues = random_number_gen.rand(len(self.link[bs][K:])) < self.parameters.imt.ul_load_imbalance
-            self.link_ul[bs][ul_ues] = np.array(self.link[bs][K:], dtype=int)[ul_ues]
-            
+            self.link_ul[bs] = np.array(self.link[bs][K:], dtype=int)[ul_ues]
+
+            # define UE RB group
+            for k, ue in enumerate(self.link_dl[bs]):
+                self.ue_beam_rbs[ue] = k
+                self.ue_directions[ue] = 'DL'
+                self.bs_beam_rbs[bs].append(('DL', k))
+            for k, ue in enumerate(self.link[bs][K:]):
+                if ue in self.link_ul[bs]:
+                    self.ue_beam_rbs[ue] = k
+                    self.ue_directions[ue] = 'UL'
+                    self.bs_beam_rbs[bs].append(('UL', k))
+
             # delete UEs that are not active
             active_ues = []
             for k, ue_num in enumerate(self.link[bs]):
                 if (ue_num in self.link_dl[bs]) or (ue_num in self.link_ul[bs]):
                     active_ues.append(ue_num)
             self.link[bs] = active_ues
-            #
-            #
-            # num_ul_ues = np.count_nonzero(self.link_ul[bs] != -1)
-            # num_ues = (len(self.link_dl[bs]) + num_ul_ues)
-
-
-            # define UE RB group
-            for k, ue in enumerate(self.link_dl[bs]):
-                self.ue_beam_rbs[ue] = k
-                self.bs_beam_rbs[bs].append(('DL', k))
-            for k, ue in enumerate(self.link_ul[bs]):
-                if ue != -1:
-                    self.ue_beam_rbs[ue] = k
-                    self.bs_beam_rbs[bs].append(('UL', k))
-                else:
-                    self.ue_beam_rbs[ue] = -1
-                    self.bs_beam_rbs[bs].append(('', -1))
-
-            # redefine link_ul
-            self.link_ul[bs] = self.link_ul[bs][ul_ues]
             
             # Activate the selected UE's and create beams
             self.ue.active[self.link[bs]] = True
@@ -213,7 +205,6 @@ class SimulationTNFullDuplex(Simulation):
                 phi = self.bs_to_ue_phi
                 theta = self.bs_to_ue_theta
                 idx_range = 1
-                beams_idx = self.bs_to_ue_beam_idx
             elif(station_2.station_type is StationType.IMT_BS):
                 if self.wrap_around_enabled:
                     d_2D, d_3D, phi, theta = station_1.get_dist_angles_wrap_around(station_2)
@@ -226,6 +217,13 @@ class SimulationTNFullDuplex(Simulation):
             # Calculate gains
             gains = np.zeros(phi.shape)
             for k in station_1_active:
+                if (station_2.station_type is StationType.IMT_UE):
+                    beams_idx = len(station_1.antenna[k].beams_list) * np.ones(station_2.num_stations)
+                    for ue_num, direc in enumerate(self.ue_directions):
+                        for beam_num, beam in enumerate(self.bs_beam_rbs[k]):
+                            if direc == beam[0] and self.ue_beam_rbs[ue_num] == beam[1]:
+                                beams_idx[ue_num] = beam_num
+
                 station_2_mask = np.logical_and(np.repeat(station_2.active,idx_range,0),
                                                 beams_idx < len(station_1.antenna[k].beams_list))
                 gains[k,station_2_mask] = station_1.antenna[k].calculate_gain(phi_vec=phi[k,station_2_mask],
@@ -284,22 +282,24 @@ class SimulationTNFullDuplex(Simulation):
             for k in station_b_active:
                 # loop in the other BS
                 for m in station_a_active:
-                    station_b_beams = [n for n in range(m * idx_range, (m+1) * idx_range)]
 
                     station_a_gains = list()
+                    station_b_beams = list()
                     # current BS beams
-                    for beam_b in self.bs_beam_rbs[k]:
+                    for b_num, beam_b in enumerate(self.bs_beam_rbs[k]):
                         associated = False
                         # other BS beams
-                        for b_num, beam_a in enumerate(self.bs_beam_rbs[m]):
+                        for a_num, beam_a in enumerate(self.bs_beam_rbs[m]):
                             # if the beams are associated
                             if beam_a[1] == beam_b[1] and beam_a[0] != beam_b[0]:
                                 # use its gain
-                                station_a_gains.append(all_gains[m, k*idx_range + b_num])
+                                station_a_gains.append(all_gains[m, k*idx_range + a_num])
+                                station_b_beams.append(m * idx_range + b_num)
                                 associated = True
                         # if no beams are associated, use token gain 0.0 instead
                         if not associated:
                             station_a_gains.append(0.0)
+                            station_b_beams.append(m * idx_range + b_num)
 
                     gain_b[k, station_b_beams] = station_a_gains
         else:
@@ -404,6 +404,10 @@ class SimulationTNFullDuplex(Simulation):
                                       - self.parameters.imt.ue_ohmic_loss
                 else:
                     interference_bs = -np.inf
+
+                self.ue.interference_from_bs[ue] = 10 * np.log10(np.power(10, 0.1 * self.ue.interference_from_bs[ue]) +
+                                                                 np.power(10, 0.1 * interference_bs))
+                self.ue.coupling_loss_to_bs.extend(list(self.coupling_loss_imt[bi, ue]))
                            
                 # Interference from UEs
                 interference_ue = -np.inf*np.ones_like(ue)
@@ -420,14 +424,15 @@ class SimulationTNFullDuplex(Simulation):
                                                      - self.coupling_loss_imt_ue_ue[interferer_ue, interfered_ue] \
                                                      - 2*self.parameters.imt.ue_body_loss \
                                                      - 2*self.parameters.imt.ue_ohmic_loss
+
+                self.ue.interference_from_ue[ue] = 10 * np.log10(np.power(10, 0.1 * self.ue.interference_from_ue[ue]) +
+                                                                 np.power(10, 0.1 * interference_ue))
+                self.ue.coupling_loss_to_ue.extend(list(self.coupling_loss_imt_ue_ue[interferer_ue, interfered_ue]))
            
                 self.ue.rx_interference[ue] = 10*np.log10( \
                     np.power(10, 0.1*self.ue.rx_interference[ue]) + \
                     np.power(10, 0.1*interference_bs) + \
                     np.power(10, 0.1*interference_ue))
-
-            # in TN-FD only BSs will have self-interference
-            self.ue.self_interference[ue] = -np.inf
 
         self.ue.thermal_noise = \
             10*math.log10(self.parameters.imt.BOLTZMANN_CONSTANT*self.parameters.imt.noise_temperature*1e3) + \
@@ -445,7 +450,8 @@ class SimulationTNFullDuplex(Simulation):
         bs_active = np.where(self.bs.active)[0]
         for bs in bs_active:
             ue = self.link_ul[bs]
-            self_interference_idx = [k < len(ue) for k in range(len(self.link_dl[bs]))]
+            self.bs.interference_from_ue[bs] = -np.inf*np.ones_like(ue)
+            self.bs.rx_interference[bs] = -np.inf * np.ones_like(ue)
             self.bs.rx_power[bs] = self.ue.tx_power[ue]  \
                                    - self.parameters.imt.ue_ohmic_loss - self.parameters.imt.ue_body_loss \
                                    - self.coupling_loss_imt[bs,ue] - self.parameters.imt.bs_ohmic_loss
@@ -469,9 +475,14 @@ class SimulationTNFullDuplex(Simulation):
                                                       - self.parameters.imt.ue_body_loss\
                                                       - self.coupling_loss_imt[bs, interferer_ue]\
                                                       - self.parameters.imt.bs_ohmic_loss
+                with catch_warnings():
+                    filterwarnings("ignore", "divide by zero encountered in log10", RuntimeWarning)
+                    self.bs.interference_from_ue[bs] = 10 * np.log10(
+                        np.power(10, 0.1 * self.bs.interference_from_ue[bs][interfered_ul_beam])
+                        + np.power(10, 0.1 * interference_ue))
+                self.bs.coupling_loss_to_ue.extend(list(self.coupling_loss_imt[bs, interferer_ue]))
 
                 # interference from BSs
-                bs_interfered_beam = []
                 bi_interferer_beam = []
                 bs_ul_interfered_beam = []
                 bi_dl_interferer_beam = []
@@ -484,7 +495,6 @@ class SimulationTNFullDuplex(Simulation):
                         # if the beams are associated
                         if beam_bs[0] == 'UL' and beam_bi[0] == 'DL' and beam_bs[1] == beam_bi[1]:
                             # use its index
-                            bs_interfered_beam.append(bs_num)
                             bi_interferer_beam.append(bs*self.parameters.imt.ue_k*self.parameters.imt.ue_k_m + bi_num)
                             bi_dl_interferer_beam.append(dl_count)
                             bs_ul_interfered_beam.append(ul_count)
@@ -496,6 +506,11 @@ class SimulationTNFullDuplex(Simulation):
                 interference_bs = self.bs.tx_power[bi][bi_dl_interferer_beam] \
                                   - 2*self.parameters.imt.bs_ohmic_loss \
                                   - self.coupling_loss_imt_bs_bs[bi, bi_interferer_beam]
+
+                self.bs.interference_from_bs[bs] = 10 * np.log10(
+                    np.power(10, 0.1 * self.bs.interference_from_bs[bs])
+                    + np.power(10, 0.1 * interference_bs))
+                self.bs.coupling_loss_to_bs.extend(list(self.coupling_loss_imt_bs_bs[bs, bi_interferer_beam]))
                                 
                 self.bs.rx_interference[bs][bs_ul_interfered_beam] = 10*np.log10( \
                     np.power(10, 0.1*self.bs.rx_interference[bs][bs_ul_interfered_beam])
@@ -503,8 +518,7 @@ class SimulationTNFullDuplex(Simulation):
                     + np.power(10, 0.1*interference_bs))
                 
             # calculate self interference
-            self.bs.self_interference[bs][self_interference_idx] = self.bs.tx_power[bs][self_interference_idx] - \
-                                                                   self.bs.sic[bs]
+            self.bs.self_interference[bs] = (self.bs.tx_power[bs] - self.bs.sic[bs]) * np.ones_like(ue)
             
             # calculate N
             self.bs.thermal_noise[bs] = \
@@ -519,8 +533,7 @@ class SimulationTNFullDuplex(Simulation):
                             np.power(10, 0.1*self.bs.self_interference[bs]))
                 
             # calculate SNR and SINR
-            self.bs.sinr[bs] = self.bs.rx_power[bs] - \
-                               self.bs.total_interference[bs][np.array(self.ue_beam_rbs[ue],dtype=int)]
+            self.bs.sinr[bs] = self.bs.rx_power[bs] - self.bs.total_interference[bs]
             self.bs.snr[bs] = self.bs.rx_power[bs] - self.bs.thermal_noise[bs]
 
         
@@ -727,7 +740,7 @@ class SimulationTNFullDuplex(Simulation):
                 self.results.system_dl_coupling_loss.extend([self.coupling_loss_imt_bs_system[active_beams]])
 
             self.results.imt_dl_tx_power.extend(self.bs.tx_power[bs].tolist())
-            self.results.imt_dl_rx_power.extend(self.ue.rx_power[ue].tolist())
+            self.results.imt_dl_rx_power.extend(self.ue.rx_power[ue_dl].tolist())
             self.results.imt_dl_sinr.extend(self.ue.sinr[ue_dl].tolist())
             self.results.imt_dl_snr.extend(self.ue.snr[ue_dl].tolist())
             self.results.imt_dl_ue_total_interf.extend(self.ue.total_interference[ue_dl].tolist())

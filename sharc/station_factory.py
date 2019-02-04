@@ -236,7 +236,7 @@ class StationFactory(object):
         imt_ue.rx_interference = -500*np.ones(num_ue)
         imt_ue.interference_from_bs = -500 * np.ones(num_ue)
         imt_ue.interference_from_ue = -500 * np.ones(num_ue)
-        imt_ue.self_interference = -500*np.ones(num_ue)
+        imt_ue.self_interference = -np.inf*np.ones(num_ue)
         imt_ue.ext_interference = -500*np.ones(num_ue)
         imt_ue.indoor = random_number_gen.random_sample(num_ue) <= (param.ue_indoor_percent/100)
 
