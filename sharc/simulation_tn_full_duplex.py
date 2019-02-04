@@ -451,6 +451,7 @@ class SimulationTNFullDuplex(Simulation):
         for bs in bs_active:
             ue = self.link_ul[bs]
             self.bs.interference_from_ue[bs] = -np.inf*np.ones_like(ue)
+            self.bs.interference_from_bs[bs] = -np.inf * np.ones_like(ue)
             self.bs.rx_interference[bs] = -np.inf * np.ones_like(ue)
             self.bs.rx_power[bs] = self.ue.tx_power[ue]  \
                                    - self.parameters.imt.ue_ohmic_loss - self.parameters.imt.ue_body_loss \
@@ -478,7 +479,7 @@ class SimulationTNFullDuplex(Simulation):
                 with catch_warnings():
                     filterwarnings("ignore", "divide by zero encountered in log10", RuntimeWarning)
                     self.bs.interference_from_ue[bs] = 10 * np.log10(
-                        np.power(10, 0.1 * self.bs.interference_from_ue[bs][interfered_ul_beam])
+                        np.power(10, 0.1 * self.bs.interference_from_ue[bs])
                         + np.power(10, 0.1 * interference_ue))
                 self.bs.coupling_loss_to_ue.extend(list(self.coupling_loss_imt[bs, interferer_ue]))
 
@@ -518,7 +519,7 @@ class SimulationTNFullDuplex(Simulation):
                     + np.power(10, 0.1*interference_bs))
                 
             # calculate self interference
-            self.bs.self_interference[bs] = (self.bs.tx_power[bs] - self.bs.sic[bs]) * np.ones_like(ue)
+            self.bs.self_interference[bs] = self.bs.tx_power[bs][:len(ue)] - self.bs.sic[bs]
             
             # calculate N
             self.bs.thermal_noise[bs] = \
