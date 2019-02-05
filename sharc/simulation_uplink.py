@@ -179,13 +179,13 @@ class SimulationUplink(Simulation):
         if self.co_channel:
             self.coupling_loss_imt_system = self.calculate_coupling_loss(self.system, 
                                                                      self.ue,
-                                                                     self.propagation_system)
+                                                                     self.propagation_system) + self.polarization_loss
 
         if self.adjacent_channel:
               self.coupling_loss_imt_system_adjacent = self.calculate_coupling_loss(self.system,
                                                                        self.ue,
                                                                        self.propagation_system,
-                                                                       c_channel=False)
+                                                                       c_channel=False) + self.polarization_loss
 
         # applying a bandwidth scaling factor since UE transmits on a portion
         # of the satellite's bandwidth

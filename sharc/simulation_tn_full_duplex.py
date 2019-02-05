@@ -588,10 +588,10 @@ class SimulationTNFullDuplex(Simulation):
         ### Downlink & Uplink
         self.coupling_loss_imt_bs_system = self.calculate_coupling_loss(self.system, 
                                                                         self.bs,
-                                                                        self.propagation_system)
+                                                                        self.propagation_system) + self.polarization_loss
         self.coupling_loss_imt_ue_system = self.calculate_coupling_loss(self.system, 
                                                                         self.ue,
-                                                                        self.propagation_system)
+                                                                        self.propagation_system) + self.polarization_loss
         
         # calculate N
         self.system.thermal_noise = \

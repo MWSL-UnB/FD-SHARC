@@ -32,6 +32,7 @@ class Simulation(ABC, Observable):
         self.parameters = parameters
         self.parameters_filename = parameter_file
 
+        self.polarization_loss = 3.0
         if self.parameters.general.system == "FSS_SS":
             self.param_system = self.parameters.fss_ss
         elif self.parameters.general.system == "FSS_ES":
@@ -43,6 +44,7 @@ class Simulation(ABC, Observable):
         elif self.parameters.general.system == "RNS":
             self.param_system = self.parameters.rns
         elif self.parameters.general.system == "RAS":
+            self.polarization_loss = 0.0
             self.param_system = self.parameters.ras
         elif self.parameters.general.system == "NONE":
             self.param_system = Parameters()
