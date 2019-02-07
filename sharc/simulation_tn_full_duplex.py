@@ -251,10 +251,9 @@ class SimulationTNFullDuplex(Simulation):
                                     station_b: StationManager,
                                     propagation: Propagation,
                                     c_channel = True) -> np.array:
-        
-        if station_a.station_type is StationType.IMT_BS and \
-           station_b.station_type is StationType.IMT_UE and \
-           self.parameters.imt.topology == "INDOOR":
+
+        if (station_a.station_type is StationType.IMT_BS or station_b.station_type is StationType.IMT_UE) and \
+             self.parameters.imt.topology == "INDOOR":
             elevation_angles = np.transpose(station_b.get_elevation(station_a))
         else:
             elevation_angles = None
@@ -634,9 +633,11 @@ class SimulationTNFullDuplex(Simulation):
                               - self.coupling_loss_imt_ue_system[ue]
                               
             total_interference_ue = np.sum(weights[ue_interf_mask]*np.power(10, 0.1*interference_ue))
-                     
-            accumulated_interference_ue = 10*np.log10(np.power(10, 0.1*accumulated_interference_ue) + \
-                                          total_interference_ue)
+
+            with catch_warnings():
+                filterwarnings("ignore", "divide by zero encountered in log10", RuntimeWarning)
+                accumulated_interference_ue = 10*np.log10(np.power(10, 0.1*accumulated_interference_ue) + \
+                                              total_interference_ue)
             
             self.system.rx_interference = 10*np.log10(np.power(10, 0.1*self.system.rx_interference) + \
                                           total_interference_ue)
