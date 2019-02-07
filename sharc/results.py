@@ -56,6 +56,8 @@ class Results(object):
         
         self.imt_bs_bs_antenna_gain = list()
         self.imt_ue_ue_antenna_gain = list()
+
+        self.system_interf_power = list()
         
         self.system_ul_coupling_loss = list()
         self.system_ul_interf_power = list()

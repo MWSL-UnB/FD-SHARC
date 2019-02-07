@@ -595,7 +595,7 @@ class SimulationTNFullDuplex(Simulation):
         # calculate N
         self.system.thermal_noise = \
             10*math.log10(self.param_system.BOLTZMANN_CONSTANT* \
-                          self.param_system.noise_temperature*1e3) + \
+                          self.system.noise_temperature*1e3) + \
                           10*math.log10(self.param_system.bandwidth * 1e6)
                           
         # Overlapping bandwidth weights
@@ -654,6 +654,8 @@ class SimulationTNFullDuplex(Simulation):
             self.results.system_inr_scaled.extend((self.system.inr + 10*math.log10(self.param_system.inr_scaling)).tolist())
             self.results.system_ul_inr_scaled.extend((self.system_ul_inr + 10*math.log10(self.param_system.inr_scaling)).tolist())
             self.results.system_dl_inr_scaled.extend((self.system_dl_inr + 10*math.log10(self.param_system.inr_scaling)).tolist())
+            if self.system.station_type is StationType.RAS:
+                self.results.system_interf_power.extend([self.system.rx_interference])
         
         bs_active = np.where(self.bs.active)[0]
         total_ue_tput = 0

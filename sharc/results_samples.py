@@ -393,7 +393,7 @@ class ResultsSamples(Results):
         if len(self.system_dl_inr_scaled) > 0:
             x = np.arange(len(self.system_dl_inr_scaled))
             y = np.array(self.system_dl_inr_scaled)
-            title = "[SYS]Samples of scaled system DL INR"
+            title = "[SYS] Samples of scaled system DL INR"
             x_label = "Number of samples"
             y_label = "INR [dB]"
             file_name = title
@@ -486,6 +486,14 @@ class ResultsSamples(Results):
             y_label = "Loss [dB]"
             file_name = title
             self.plot_list.append(Plot(x, y, x_label, y_label, title, file_name))
+        if len(self.system_interf_power) > 0:
+            x = np.arange(len(self.system_interf_power))
+            y = np.array(self.system_interf_power)
+            title = "[SYS] Samples of system interference power"
+            x_label = "Number of samples"
+            y_label = "Interference [dBm]"
+            file_name = title
+            self.plot_list.append(Plot(x, y, x_label, y_label, title, file_name))
                       
             
     def write_files(self, snapshot_number: int):
@@ -568,6 +576,8 @@ class ResultsSamples(Results):
 
         self.imt_bs_bs_antenna_gain = list()
         self.imt_ue_ue_antenna_gain = list()
+
+        self.system_interf_power = list()
 
         self.system_ul_coupling_loss = list()
         self.system_ul_interf_power = list()
