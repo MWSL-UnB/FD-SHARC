@@ -183,6 +183,7 @@ class SimulationTNFullDuplexTest(unittest.TestCase):
 
         self.simulation.bs_power_gain = 0
         self.simulation.ue_power_gain = 0
+        self.simulation.polarization_loss = 0.0
 
         random_number_gen = np.random.RandomState(1)
 
@@ -437,6 +438,7 @@ class SimulationTNFullDuplexTest(unittest.TestCase):
 
         self.simulation.bs_power_gain = 0
         self.simulation.ue_power_gain = 0
+        self.simulation.polarization_loss = 0.0
 
         random_number_gen = np.random.RandomState(1)
 
@@ -688,6 +690,7 @@ class SimulationTNFullDuplexTest(unittest.TestCase):
 
         self.simulation.bs_power_gain = 0
         self.simulation.ue_power_gain = 0
+        self.simulation.polarization_loss = 0.0
 
         random_number_gen = np.random.RandomState(1326)
         #
@@ -964,6 +967,7 @@ class SimulationTNFullDuplexTest(unittest.TestCase):
 
         self.simulation.bs_power_gain = 0
         self.simulation.ue_power_gain = 0
+        self.simulation.polarization_loss = 0.0
 
         random_number_gen = np.random.RandomState(133)
         #
