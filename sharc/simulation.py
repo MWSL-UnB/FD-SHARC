@@ -570,14 +570,14 @@ class Simulation(ABC, Observable):
         return weights
 
     def plot_scenario(self):
-        fig = plt.figure(figsize=(8,8), facecolor='w', edgecolor='k')
+        fig = plt.figure(figsize=(7,7), facecolor='w', edgecolor='k')
         ax = fig.gca()
 
         # Plot network topology
         self.topology.plot(ax)
 
         # Plot user equipments
-        ax.scatter(self.ue.x, self.ue.y, color='r', edgecolor="w", linewidth=0.5, label="UE")
+        ax.scatter(self.ue.x, self.ue.y, color='r', edgecolor="w", linewidth=0.5, label="Terminal de usuário")
 
         # Plot UE's azimuth
         d = 0.1 * self.topology.cell_radius
@@ -588,10 +588,10 @@ class Simulation(ABC, Observable):
                      'r-')
 
         plt.axis('image')
-        plt.title("Simulation scenario")
-        plt.xlabel("x-coordinate [m]")
-        plt.ylabel("y-coordinate [m]")
-        plt.legend(loc="upper left", scatterpoints=1)
+        # plt.title("Simulation scenario")
+        plt.xlabel("Coordenada X [m]")
+        plt.ylabel("Coordenada Y [m]")
+        plt.legend(loc="upper left", scatterpoints=1, framealpha=1)
         plt.tight_layout()
         plt.show()
 
@@ -608,7 +608,7 @@ class Simulation(ABC, Observable):
             plt.title("Simulation scenario: side view")
             plt.xlabel("x-coordinate [m]")
             plt.ylabel("z-coordinate [m]")
-            plt.legend(loc="upper left", scatterpoints=1)
+            plt.legend(loc="upper left", scatterpoints=1, framealpha=0)
             plt.tight_layout()
             plt.show()
         

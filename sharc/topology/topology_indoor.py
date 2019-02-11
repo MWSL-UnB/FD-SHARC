@@ -149,7 +149,7 @@ class TopologyIndoor(Topology):
                 
         
         # indoor base stations
-        ax.scatter(self.x, self.y, color='k', edgecolor="k", linewidth=2, label="Base station")
+        ax.scatter(self.x, self.y, color='k', edgecolor="k", linewidth=2, label="Estação base")
         
     def plot_side_view(self, ax: matplotlib.axes.Axes):
         
