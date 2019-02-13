@@ -130,39 +130,37 @@ if __name__ == '__main__':
     import matplotlib.pyplot as plt
 
     # Create propagation object
-    rnd = np.random.RandomState()
+    rnd = np.random.RandomState(1536)
     propag = PropagationImtP1411(rnd)
 
+    d_min = 1
+    d_max = 1e3
+    data_num = 500
+
     # Input parameters
-    dist = np.linspace(0.1, 100, num=500)
+    dist = np.linspace(d_min, d_max, num=data_num)
     freq = 27e6*np.ones_like(dist)
 
     # No shadowing
     shad = False
     # Calculate loss
-    loss = propag.get_loss(distance_3D=dist, frequency=freq, shadow=shad)
-
+    loss_no_shad = propag.get_loss(distance_3D=dist, frequency=freq, shadow=shad)
     # Plot with shadowing loss
-    plt.plot(dist, loss, linewidth=1.0)
-    plt.xlabel('Distance [m]')
-    plt.ylabel('Loss [dB]')
-    plt.title('No shadow loss')
-    plt.grid()
-    plt.xlim((0, 100))
-    plt.ylim((np.min(loss), np.max(loss)))
-    plt.show()
+    plt.semilogx(dist, loss_no_shad, label='Sem sombreamento', linewidth=2.0)
 
     # With shadowing
     shad = True
     # Calculate loss
+    dist = np.logspace(np.log10(3.5), 3, num=data_num)
+    freq = 27e6 * np.ones_like(dist)
     loss = propag.get_loss(distance_3D=dist, frequency=freq, shadow=shad)
-
     # Plot with shadowing loss
-    plt.plot(dist, loss, linewidth=1.0)
-    plt.xlabel('Distance [m]')
-    plt.ylabel('Loss [dB]')
-    plt.title('With shadow loss')
+    plt.semilogx(dist, loss, 'r.', label='Com sombreamento', linewidth=0.1)
+
+    plt.xlabel("Distância [m]")
+    plt.ylabel("Perda de propagação [dB]")
+    plt.legend()
     plt.grid()
-    plt.xlim((0, 100))
-    plt.ylim((np.min(loss), np.max(loss)))
+    plt.xlim((d_min, d_max))
+    plt.ylim((np.min(loss_no_shad), np.max(loss)))
     plt.show()
