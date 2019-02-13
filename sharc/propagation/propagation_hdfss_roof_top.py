@@ -295,7 +295,7 @@ if __name__ == '__main__':
     par.bs_building_entry_loss_type = 'FIXED_VALUE'
     par.bs_building_entry_loss_prob = 0.5
     par.bs_building_entry_loss_value = 50
-    prop = PropagationHDFSS(par,rnd)
+    prop = PropagationHDFSSRoofTop(par,rnd)
     
     d = np.linspace(5,1000,num=2000)
     d = np.array([list(d)])
@@ -340,5 +340,4 @@ if __name__ == '__main__':
     plt.ylabel("Path Loss [dB]")
     plt.grid()
     plt.show()
-    
     

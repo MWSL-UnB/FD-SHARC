@@ -50,29 +50,29 @@ if __name__ == '__main__':
     # initialize antenna parameters
     param27 = ParametersFssEs()
     param27.antenna_pattern = "ITU-R S.580-6"
-    param27.frequency = 27000
+    param27.frequency = 40000
     param27.antenna_gain = 50
-    param27.diameter = 9.6
+    param27.diameter = 0.3
     antenna27 = AntennaS580(param27)
 
-    gain27 = antenna27.calculate_gain(phi_vec=phi)
+    gain27 = antenna27.calculate_gain(off_axis_angle_vec=phi)
 
     param = ParametersFssEs()
     param.antenna_pattern = "ITU-R S.580-6"
-    param.frequency = 27000
+    param.frequency = 40000
     param.antenna_gain = 50
-    param.diameter = 0.45
+    param.diameter = 0.74
     antenna = AntennaS580(param)
-    gain = antenna.calculate_gain(phi_vec=phi)
+    gain = antenna.calculate_gain(off_axis_angle_vec=phi)
 
     fig = plt.figure(figsize=(8,7), facecolor='w', edgecolor='k')  # create a figure object
 
-    plt.semilogx(phi, gain27 - param27.antenna_gain, "-b", label = "$f = 27$ $GHz,$ $D = 9.6$ $m$")
-    plt.semilogx(phi, gain - param.antenna_gain, "-r", label = "$f = 27$ $GHz,$ $D = 0.45$ $m$")
+    plt.semilogx(phi, gain27 - param27.antenna_gain, "-r", label = "$f = 40$ $GHz,$ $D = 0.3$ $m$")
+    plt.semilogx(phi, gain - param.antenna_gain, "-b", label = "$f = 40$ $GHz,$ $D = 0.74$ $m$")
 
-    plt.title("ITU-R S.580 antenna radiation pattern")
-    plt.xlabel("Off-axis angle $\phi$ [deg]")
-    plt.ylabel("Gain relative to $G_m$ [dB]")
+    # plt.title("ITU-R S.580 antenna radiation pattern")
+    plt.xlabel("Ângulo com relação ao eixo principal $\phi$ [deg]")
+    plt.ylabel("Ganho relativo ao ganho maximo [dB]")
     plt.legend(loc="lower left")
     plt.xlim((phi[0], phi[-1]))
     plt.ylim((-80, 10))

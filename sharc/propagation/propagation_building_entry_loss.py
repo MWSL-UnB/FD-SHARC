@@ -160,15 +160,15 @@ if __name__ == '__main__':
                                           building_class="TRADITIONAL")
             
     for n,el in enumerate(elevations):
-        lbl = str(el) + " deg"
+        lbl = str(el) + r"$^o$"
         plt.plot(loss[n],probability,label=lbl)
     
-    plt.xlabel("Building Entry Loss [dB]")
-    plt.ylabel("Probability that loss is exceeded")
+    plt.xlabel("Perda por penetração [dB]")
+    plt.ylabel("Distribuição cumulativa")
     plt.ylim((0,1))
 #    plt.xlim((0,65))
     plt.grid()
-    plt.legend()
+    plt.legend(loc='upper left')
     plt.show()
 
 

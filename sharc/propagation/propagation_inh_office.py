@@ -175,9 +175,12 @@ class PropagationInhOffice(Propagation):
 
 if __name__ == '__main__':
 
+    d_min = 0.1
+    d_max = 100
+    data_num = 1000
     ###########################################################################
     # Print LOS probability
-    distance_2D = np.linspace(0.1, 150, num=1000)[:,np.newaxis]
+    distance_2D = np.logspace(np.log10(d_min), np.log10(d_max), num=data_num)[:,np.newaxis]
     inh = PropagationInhOffice(np.random.RandomState())
 
     los_probability = inh.get_los_probability(distance_2D)
@@ -185,11 +188,11 @@ if __name__ == '__main__':
     plt.figure(figsize=(8,6), facecolor='w', edgecolor='k')
     plt.loglog(distance_2D, los_probability)
 
-    plt.title("InH Office - LOS probability")
-    plt.xlabel("distance [m]")
-    plt.ylabel("probability")
-    plt.xlim((0, distance_2D[-1,0]))
-    plt.ylim((0, 1.1))
+    # plt.title("InH Office - LOS probability")
+    plt.xlabel("Distância [m]")
+    plt.ylabel("Probabilidade")
+    plt.xlim((d_min, d_max))
+    # plt.ylim((0, 1.1))
     plt.tight_layout()
     plt.grid()
     plt.show()
@@ -198,7 +201,7 @@ if __name__ == '__main__':
     # Print path loss for InH-LOS, InH-NLOS and Free Space
     from sharc.propagation.propagation_free_space import PropagationFreeSpace
     shadowing = 0
-    distance_2D = np.linspace(1, 150, num=1000)[:,np.newaxis]
+    distance_2D = np.logspace(np.log10(d_min), np.log10(d_max), num=data_num)[:,np.newaxis]
     frequency = 27000*np.ones(distance_2D.shape)
     h_bs = 3*np.ones(len(distance_2D[:,0]))
     h_ue = 1.5*np.ones(len(distance_2D[0,:]))
@@ -206,25 +209,20 @@ if __name__ == '__main__':
     indoor = np.ones(len(distance_2D[0,:]), dtype = bool)
 
     loss_fs = PropagationFreeSpace(np.random.RandomState()).get_loss(distance_3D=distance_3D, frequency=frequency)
-
-    loss_inh = inh.get_loss(distance_3D = distance_3D,
-                            distance_2D = distance_2D,
-                            frequency = frequency,
-                            indoor = indoor,
-                            shadowing = shadowing)
+    loss_inh_los = inh.get_loss_los(distance_3D, frequency, shadowing)
+    loss_inh_nlos = inh.get_loss_nlos(distance_3D, frequency, shadowing)
 
     fig = plt.figure(figsize=(8,6), facecolor='w', edgecolor='k')
     ax = fig.gca()
-    ax.set_prop_cycle( cycler('color', ['r', 'b', 'g', 'y']) )
 
-    ax.scatter(distance_2D, loss_inh, label = "InH-Office")
-    ax.plot(distance_2D, loss_fs, label = "free space")
+    ax.plot(distance_2D, loss_inh_nlos, 'k-', label="InH Office, NLOS")
+    ax.plot(distance_2D, loss_inh_los, 'k--',label = "InH Office, LOS")
+    ax.plot(distance_2D, loss_fs, 'r:', label = "Espaço livre")
     ax.set_xscale('log')
 
-    plt.title("InH-Office - path loss")
-    plt.xlabel("distance [m]")
-    plt.ylabel("path loss [dB]")
-    plt.xlim((0, distance_2D[-1,0]))
+    plt.xlabel("Distância [m]")
+    plt.ylabel("Perda de propagação [dB]")
+    plt.xlim((d_min, d_max))
 
     plt.legend(loc="upper left")
     plt.tight_layout()
