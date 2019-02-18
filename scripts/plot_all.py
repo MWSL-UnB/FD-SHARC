@@ -30,7 +30,7 @@ for folder in subfolders:
     for file in files:
         case = os.path.basename(os.path.normpath(file))
         print("Ploting file \"" + case + "\"")
-        # Collect and plot data
+        # Collect and plot_scripts data
         data = loadtxt(file,skiprows=1)
         plt.plot(data[:,0],data[:,1])
         # Save figure

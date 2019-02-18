@@ -552,7 +552,7 @@ class ResultsCDF(Results):
             y_limits = (0, 1)
             self.plot_list.append(Plot(x, y, x_label, y_label, title, file_name, x_lim=x_limits, y_lim=y_limits))            
             ###################################################################
-            # now we plot INR samples
+            # now we plot_scripts INR samples
             x = np.arange(len(self.system_inr))
             y = np.array(self.system_inr)
             title = "[SYS] INR samples"

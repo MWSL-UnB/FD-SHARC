@@ -10,6 +10,10 @@ from sharc.support.enumerations import StationType
 import numpy as np
 import matplotlib.pyplot as plt
 
+# Initialize plot_scripts
+plt.figure(figsize=(10, 5))
+
+# IMT BS
 # Initialize variables
 sta_type = StationType.IMT_BS
 p_tx = 24.30
@@ -29,6 +33,32 @@ mask_val = np.ones_like(freqs) * msk.mask_dbm[0]
 for k in range(len(msk.freq_lim) - 1, -1, -1):
     mask_val[np.where(freqs < msk.freq_lim[k])] = msk.mask_dbm[k]
 
+plt.plot(freqs_ghz, mask_val, 'k', label="Máscara espectral IMT BS")
+
+# IMT UE
+# Initialize variables
+sta_type = StationType.IMT_UE
+p_tx = 22
+freq = 43000
+rb_per_bs = np.trunc(0.9 * 200 / 0.180)
+rb_per_ue = np.trunc(rb_per_bs / 3)
+band = rb_per_ue * 0.180
+
+# Create mask
+msk = SpectralMaskImt(sta_type, freq, band)
+msk.set_mask(power=p_tx)
+
+# Frequencies
+freqs = np.linspace(-3000, 3000, num=5000) + freq
+freqs_ghz = freqs / 1000
+
+# Mask values
+mask_val = np.ones_like(freqs) * msk.mask_dbm[0]
+for k in range(len(msk.freq_lim) - 1, -1, -1):
+    mask_val[np.where(freqs < msk.freq_lim[k])] = msk.mask_dbm[k]
+
+plt.plot(freqs_ghz, mask_val, 'b', label="Máscara espectral IMT UE")
+
 # RAS Band
 freq_ras = np.linspace(42.5, 43.5, num=1000)
 ras_val = np.zeros_like(freq_ras)
@@ -36,8 +66,6 @@ ras_val[0] = np.min(mask_val) - 10
 ras_val[-1] = np.min(mask_val) - 10
 
 # Plot
-plt.figure(figsize=(10, 5))
-plt.plot(freqs_ghz, mask_val, 'k', label="Máscara espectral IMT")
 plt.plot(freq_ras, ras_val, 'r--', label="Banda da RAS")
 plt.legend(loc=2)
 plt.xlim([42.3, 43.7])

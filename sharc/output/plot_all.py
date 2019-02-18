@@ -7,7 +7,7 @@ files = glob('*.txt')
 
 for file in files:
     print(file)
-    # Collect and plot data
+    # Collect and plot_scripts data
     data = np.loadtxt(file,skiprows=1)
     plt.figure()
     if 'CDF' in file:

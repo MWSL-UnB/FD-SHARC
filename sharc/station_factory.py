@@ -750,7 +750,7 @@ class StationFactory(object):
 if __name__ == '__main__':
     from matplotlib import pyplot as plt
 
-    # plot uniform distribution in macrocell scenario
+    # plot_scripts uniform distribution in macrocell scenario
 
     factory = StationFactory()
     topology = TopologyMacrocell(1000, 1)

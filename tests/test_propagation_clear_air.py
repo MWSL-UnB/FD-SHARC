@@ -138,12 +138,12 @@ class PropagationClearAirTest(unittest.TestCase):
     #     fig = plt.figure(2)
     #     f = ['10 GHz','20 GHz','30 GHz','40 GHz','50 GHz','60 GHz']
     #     ax = fig.add_subplot(111)
-    #     ax.plot(eixo_x, data1)
-    #     ax.plot(eixo_x, data2)
-    #     ax.plot(eixo_x, data3)
-    #     ax.plot(eixo_x, data4)
-    #     ax.plot(eixo_x, data5)
-    # #    ax.plot(eixo_x, data6)
+    #     ax.plot_scripts(eixo_x, data1)
+    #     ax.plot_scripts(eixo_x, data2)
+    #     ax.plot_scripts(eixo_x, data3)
+    #     ax.plot_scripts(eixo_x, data4)
+    #     ax.plot_scripts(eixo_x, data5)
+    # #    ax.plot_scripts(eixo_x, data6)
     #
     #     # Add legend, title and axis labels
     #     lgd = ax.legend( [ 'f = ' + str(lag) for lag in f], loc='upper center', bbox_to_anchor=(0.16, 1))

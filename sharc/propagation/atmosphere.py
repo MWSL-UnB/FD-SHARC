@@ -412,7 +412,7 @@ if __name__ == '__main__':
     pressure_hPa = 1013.25
     vapour_pressure_hPa = vapour_density * temperature / 216.7
 
-    # generate plot
+    # generate plot_scripts
     f_GHz_vec = range(1, 1000)
     specific_att = np.zeros(len(f_GHz_vec))
 

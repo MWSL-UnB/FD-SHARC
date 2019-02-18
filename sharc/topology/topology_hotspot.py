@@ -208,13 +208,13 @@ class TopologyHotspot(Topology):
 
 
     def plot(self, ax: matplotlib.axes.Axes):
-        # plot macrocells
+        # plot_scripts macrocells
         self.macrocell.plot(ax)
 
-        # plot hotspots
+        # plot_scripts hotspots
         plt.scatter(self.x, self.y, color='g', edgecolor="w", linewidth=0.5, label="Hotspot")
 
-        # plot hotspots coverage area
+        # plot_scripts hotspots coverage area
         for x, y, a in zip(self.x, self.y, self.azimuth):
             pa = patches.Wedge( (x, y), self.cell_radius, a-60, a+60, fill=False,
                                edgecolor="green", linestyle='solid' )

@@ -19,7 +19,7 @@ data.close()
 norm_max = np.amax(data_dict['correction_factor_co_channel'])
 norm_min = np.amin(data_dict['correction_factor_co_channel'])
 
-# Create plot data
+# Create plot_scripts data
 phi_min = -180
 phi_max = +180
 theta_min = 0
